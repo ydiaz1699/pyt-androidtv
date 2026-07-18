@@ -312,11 +312,11 @@ class BaseTV:
             cmd = CommandRegistry.volume_set(new_volume, self._device_info.android_version)
             await self._adb.shell(cmd)
 
-    async def volume_up(self, *, current_volume: int | None = None) -> None:
+    async def volume_up(self) -> None:
         """Aumentar el volumen un paso."""
         await self.send_key_code(constants.KEYS["VOLUME_UP"])
 
-    async def volume_down(self, *, current_volume: int | None = None) -> None:
+    async def volume_down(self) -> None:
         """Disminuir el volumen un paso."""
         await self.send_key_code(constants.KEYS["VOLUME_DOWN"])
 
@@ -520,17 +520,24 @@ class BaseTV:
         """Escribir texto en el campo de entrada activo.
 
         Los espacios se reemplazan por '%s' ya que 'input text' no acepta
-        espacios directamente.
-        Equivalente a: adb shell input text '<texto>'
+        espacios directamente en Android.
+        Equivalente a: adb shell input text "<texto>"
 
         Parámetros
         ----------
         text : str
             El texto a escribir. Los espacios serán convertidos automáticamente.
         """
-        # Escapar caracteres especiales de shell y reemplazar espacios
-        escaped = text.replace(" ", "%s").replace("'", "\\'").replace("\"", "\\\"")
-        await self._adb.shell(f"input text '{escaped}'")
+        # Bug 4 corregido: Usar comillas dobles y escapar correctamente.
+        # En shell POSIX, dentro de comillas dobles se escapan: $ ` \ " !
+        # Los espacios se reemplazan por %s (convención de 'input text' en Android)
+        escaped = text.replace(" ", "%s")
+        # Escapar caracteres especiales para comillas dobles de shell
+        escaped = escaped.replace("\\", "\\\\")
+        escaped = escaped.replace('"', '\\"')
+        escaped = escaped.replace("$", "\\$")
+        escaped = escaped.replace("`", "\\`")
+        await self._adb.shell(f'input text "{escaped}"')
 
     async def input_keyevent(self, keycode: int) -> None:
         """Enviar un evento de tecla por código numérico directamente.

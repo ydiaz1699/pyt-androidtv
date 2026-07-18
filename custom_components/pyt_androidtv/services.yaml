@@ -1,5 +1,4 @@
 # Servicios personalizados de pyt_androidtv para Home Assistant
-# Estos servicios se pueden llamar desde automatizaciones, scripts y tarjetas Mushroom
 
 adb_command:
   name: Comando ADB
@@ -127,5 +126,70 @@ input_text:
       description: El texto a escribir en el dispositivo.
       required: true
       example: "Hola Mundo"
+      selector:
+        text:
+
+search_in_app:
+  name: Buscar en App
+  description: Abrir una aplicación y escribir un texto de búsqueda automáticamente.
+  fields:
+    entity_id:
+      name: Entidad
+      description: La entidad media_player del dispositivo.
+      required: true
+      selector:
+        entity:
+          domain: media_player
+          integration: pyt_androidtv
+    app:
+      name: Aplicación
+      description: El package ID de la app donde buscar (ej. com.netflix.ninja).
+      required: true
+      example: "com.netflix.ninja"
+      selector:
+        text:
+    query:
+      name: Texto de búsqueda
+      description: El texto a buscar dentro de la app.
+      required: true
+      example: "Mi película favorita"
+      selector:
+        text:
+    delay_s:
+      name: Espera antes de escribir (segundos)
+      description: Tiempo de espera para que la app cargue antes de escribir.
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 15
+          mode: slider
+          step: 0.5
+
+record_screen:
+  name: Grabar Pantalla
+  description: Grabar la pantalla del dispositivo y descargar el archivo MP4.
+  fields:
+    entity_id:
+      name: Entidad
+      description: La entidad media_player del dispositivo.
+      required: true
+      selector:
+        entity:
+          domain: media_player
+          integration: pyt_androidtv
+    duration_s:
+      name: Duración (segundos)
+      description: Duración de la grabación (máximo 180 segundos).
+      default: 10
+      selector:
+        number:
+          min: 5
+          max: 180
+          mode: slider
+    filename:
+      name: Nombre del archivo
+      description: Nombre del archivo MP4 de salida.
+      default: "screen_recording.mp4"
       selector:
         text:

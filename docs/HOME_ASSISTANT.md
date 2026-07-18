@@ -822,3 +822,138 @@ Si funciona, verás el modelo del dispositivo en los logs.
 - Librería: [pyt-androidtv](https://github.com/ydiaz1699/pyt-androidtv)
 - Tarjetas UI: [Mushroom](https://github.com/piitaya/lovelace-mushroom) por piitaya
 - Integración original: [python-androidtv](https://github.com/JeffLIrion/python-androidtv) por Jeff Irion
+
+
+---
+
+## Nuevas Funcionalidades (v1.1)
+
+### Entidades adicionales
+
+Al configurar un dispositivo ahora se crean **3 entidades** adicionales:
+
+| Entidad | Tipo | Descripción |
+|---------|------|-------------|
+| `sensor.android_tv_salon_apps_instaladas` | sensor | Número de apps instaladas (lista en atributos) |
+| `sensor.android_tv_salon_apps_en_ejecucion` | sensor | Número de apps ejecutándose |
+| `camera.android_tv_salon_pantalla` | camera | Captura de pantalla en vivo |
+
+---
+
+### Captura de pantalla en vivo (Camera)
+
+La entidad camera muestra la pantalla del dispositivo como imagen. Se actualiza al abrir la tarjeta (con caché de 5 segundos para no saturar ADB).
+
+```yaml
+# Tarjeta picture-entity para ver la pantalla del TV
+type: picture-entity
+entity: camera.android_tv_salon_pantalla
+show_state: false
+show_name: false
+```
+
+---
+
+### Sensor de Apps Instaladas
+
+Útil para crear automatizaciones basadas en las apps del dispositivo:
+
+```yaml
+# Mostrar el número de apps como chip
+type: custom:mushroom-chips-card
+chips:
+  - type: entity
+    entity: sensor.android_tv_salon_apps_instaladas
+    icon: mdi:apps
+```
+
+La lista completa está en el atributo `apps` del sensor.
+
+---
+
+### Servicio: Buscar en App
+
+Combina abrir una app + escribir una búsqueda automáticamente:
+
+```yaml
+# Buscar "Stranger Things" en Netflix
+service: pyt_androidtv.search_in_app
+data:
+  entity_id: media_player.android_tv_salon
+  app: com.netflix.ninja
+  query: "Stranger Things"
+  delay_s: 3
+```
+
+Tarjeta Mushroom para búsqueda rápida:
+
+```yaml
+type: custom:mushroom-template-card
+primary: "Buscar en Netflix"
+secondary: "Stranger Things"
+icon: mdi:magnify
+icon_color: red
+tap_action:
+  action: call-service
+  service: pyt_androidtv.search_in_app
+  data:
+    entity_id: media_player.android_tv_salon
+    app: com.netflix.ninja
+    query: "Stranger Things"
+    delay_s: 3
+```
+
+---
+
+### Servicio: Grabar Pantalla
+
+Graba la pantalla del dispositivo y descarga el MP4 a `/config/www/pyt_androidtv/`:
+
+```yaml
+service: pyt_androidtv.record_screen
+data:
+  entity_id: media_player.android_tv_salon
+  duration_s: 30
+  filename: "grabacion_tv.mp4"
+```
+
+Al completarse, recibirás una notificación persistente con la ubicación del archivo.
+El video estará disponible en: `http://tu-ha:8123/local/pyt_androidtv/grabacion_tv.mp4`
+
+---
+
+### Apps Favoritas desde la UI (OptionsFlow)
+
+Después de configurar el dispositivo, puedes agregar apps favoritas desde la interfaz:
+
+1. Ir a **Ajustes > Integraciones > pyt-androidtv**
+2. Clic en **Configurar** (icono de engranaje)
+3. En el campo "Apps favoritas", escribir los package IDs separados por coma
+4. También puedes ajustar el intervalo de actualización y reintentos de reconexión
+
+Las apps favoritas configuradas se exponen como atributo `favorite_apps` en la entidad media_player.
+
+---
+
+### Reconexión Automática
+
+Si el dispositivo se desconecta (reinicio, pérdida de WiFi, etc.), la integración intentará reconectar automáticamente:
+
+- Hasta 3 intentos por ciclo de actualización (configurable en opciones)
+- Logging informativo de cada intento
+- Reconexión transparente sin reiniciar HA
+
+---
+
+### Resumen de todos los servicios disponibles
+
+| Servicio | Descripción |
+|----------|-------------|
+| `pyt_androidtv.adb_command` | Comando ADB personalizado |
+| `pyt_androidtv.tap` | Toque en coordenadas |
+| `pyt_androidtv.swipe` | Deslizamiento en pantalla |
+| `pyt_androidtv.input_text` | Escribir texto |
+| `pyt_androidtv.search_in_app` | Abrir app y buscar texto |
+| `pyt_androidtv.record_screen` | Grabar y descargar pantalla |
+
+Todos los servicios requieren `entity_id` y lo usan correctamente para dirigirse al dispositivo correcto (soporta múltiples dispositivos).

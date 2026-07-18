@@ -1,15 +1,13 @@
 """Plataforma Media Player para pyt-androidtv.
 
 Expone el dispositivo Android TV/Fire TV como una entidad media_player
-compatible con Home Assistant, incluyendo soporte completo para las
-tarjetas Mushroom Media Player.
+compatible con Home Assistant y tarjetas Mushroom Media Player.
 
-Características soportadas:
-- Encender/Apagar
-- Play/Pause/Stop/Next/Previous
-- Control de volumen (mute, set, up, down)
-- Lanzar aplicaciones (via media_browser/select_source)
-- Info de medios (app actual, estado)
+Bugs corregidos respecto a versión anterior:
+- async_mute_volume ahora respeta el parámetro booleano mute
+- STATE_MAP incluye estado "stopped"
+- async_select_source valida el source
+- Reconexión automática ante pérdida de ADB
 """
 
 from __future__ import annotations
@@ -35,13 +33,14 @@ _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(seconds=SCAN_INTERVAL_SECONDS)
 
-# Mapeo de estados pyt-androidtv -> Home Assistant
-STATE_MAP = {
+# Bug 5 corregido: Incluir "stopped" en STATE_MAP
+STATE_MAP: dict[str, MediaPlayerState | None] = {
     "idle": MediaPlayerState.IDLE,
     "off": MediaPlayerState.OFF,
     "playing": MediaPlayerState.PLAYING,
     "paused": MediaPlayerState.PAUSED,
     "standby": MediaPlayerState.STANDBY,
+    "stopped": MediaPlayerState.IDLE,  # HA no tiene STOPPED, mapear a IDLE
     "unavailable": None,
 }
 
@@ -62,23 +61,15 @@ async def async_setup_entry(
 class PytAndroidTVMediaPlayer(MediaPlayerEntity):
     """Entidad Media Player para Android TV / Fire TV.
 
-    Esta entidad es totalmente compatible con la tarjeta Mushroom Media Player,
-    exponiendo todos los controles de volumen y reproducción necesarios.
+    Compatible con tarjeta Mushroom Media Player Card.
+    Incluye reconexión automática ante pérdida de conexión ADB.
     """
 
     _attr_has_entity_name = True
     _attr_device_class = MediaPlayerDeviceClass.TV
 
     def __init__(self, device: Any, entry: ConfigEntry) -> None:
-        """Inicializar la entidad media player.
-
-        Parámetros
-        ----------
-        device : AndroidTV o FireTV
-            La instancia del dispositivo pyt-androidtv.
-        entry : ConfigEntry
-            La entrada de configuración de Home Assistant.
-        """
+        """Inicializar la entidad media player."""
         self._device = device
         self._entry = entry
         self._state: MediaPlayerState | None = None
@@ -87,9 +78,9 @@ class PytAndroidTVMediaPlayer(MediaPlayerEntity):
         self._is_volume_muted: bool | None = None
         self._running_apps: list[str] = []
         self._hdmi_input: str | None = None
-        self._media_title: str | None = None
+        self._reconnect_attempts: int = 0
+        self._max_reconnect_attempts: int = 3
 
-        # Identificación del dispositivo
         device_info = device.device_info
         self._attr_unique_id = f"pyt_androidtv_{entry.data['host']}_{entry.data.get('port', 5555)}"
         self._attr_name = entry.data.get("name", device_info.model or "Android TV")
@@ -108,10 +99,7 @@ class PytAndroidTVMediaPlayer(MediaPlayerEntity):
 
     @property
     def supported_features(self) -> MediaPlayerEntityFeature:
-        """Características soportadas por esta entidad.
-
-        Todas estas son reconocidas por Mushroom Media Player Card.
-        """
+        """Características soportadas (reconocidas por Mushroom Media Card)."""
         return (
             MediaPlayerEntityFeature.TURN_ON
             | MediaPlayerEntityFeature.TURN_OFF
@@ -143,7 +131,7 @@ class PytAndroidTVMediaPlayer(MediaPlayerEntity):
 
     @property
     def source(self) -> str | None:
-        """App actualmente en ejecución (fuente activa)."""
+        """App actualmente en ejecución."""
         return self._current_app
 
     @property
@@ -153,7 +141,7 @@ class PytAndroidTVMediaPlayer(MediaPlayerEntity):
 
     @property
     def media_title(self) -> str | None:
-        """Título del medio (nombre de la app actual)."""
+        """Título del medio (nombre legible de la app actual)."""
         from pyt_androidtv.constants import KNOWN_APPS
 
         if self._current_app and self._current_app in KNOWN_APPS:
@@ -178,12 +166,37 @@ class PytAndroidTVMediaPlayer(MediaPlayerEntity):
         attrs["running_apps"] = self._running_apps
         return attrs
 
-    # === Actualización de estado ===
+    # === Actualización de estado con reconexión automática (Feature 5) ===
 
     async def async_update(self) -> None:
-        """Actualizar el estado del dispositivo (llamado por HA cada SCAN_INTERVAL)."""
+        """Actualizar el estado del dispositivo.
+
+        Incluye reconexión automática: si el dispositivo no está disponible,
+        intenta reconectar antes de reportar unavailable.
+        """
+        # Feature 5: Reconexión automática ante pérdida de ADB
+        if not self._device.available:
+            if self._reconnect_attempts < self._max_reconnect_attempts:
+                self._reconnect_attempts += 1
+                _LOGGER.info(
+                    "Dispositivo no disponible, intento de reconexión %d/%d",
+                    self._reconnect_attempts,
+                    self._max_reconnect_attempts,
+                )
+                connected = await self._device.connect(log_errors=False)
+                if connected:
+                    _LOGGER.info("Reconexión exitosa a %s", self._entry.data["host"])
+                    self._reconnect_attempts = 0
+                else:
+                    self._state = None
+                    return
+            else:
+                self._state = None
+                return
+
         try:
             state = await self._device.update()
+            self._reconnect_attempts = 0  # Reset en update exitoso
 
             self._state = STATE_MAP.get(state.state.value)
             self._current_app = state.current_app
@@ -195,8 +208,10 @@ class PytAndroidTVMediaPlayer(MediaPlayerEntity):
         except Exception as exc:  # noqa: BLE001
             _LOGGER.warning("Error actualizando estado: %s", exc)
             self._state = None
+            # Marcar para reconexión en el próximo ciclo
+            self._reconnect_attempts += 1
 
-    # === Comandos de control (usados por Mushroom y HA UI) ===
+    # === Comandos de control ===
 
     async def async_turn_on(self) -> None:
         """Encender el dispositivo."""
@@ -235,31 +250,52 @@ class PytAndroidTVMediaPlayer(MediaPlayerEntity):
         await self._device.volume_down()
 
     async def async_set_volume_level(self, volume: float) -> None:
-        """Establecer nivel de volumen.
-
-        Parámetros
-        ----------
-        volume : float
-            Nivel de volumen entre 0.0 y 1.0.
-        """
+        """Establecer nivel de volumen (0.0 a 1.0)."""
         await self._device.set_volume_level(volume)
 
     async def async_mute_volume(self, mute: bool) -> None:
-        """Silenciar/des-silenciar el volumen.
+        """Silenciar o des-silenciar el volumen.
+
+        Bug 2 corregido: Ahora respeta el parámetro booleano `mute`.
+        Solo envía MUTE si el estado actual difiere del deseado.
 
         Parámetros
         ----------
         mute : bool
             True para silenciar, False para des-silenciar.
         """
-        await self._device.mute()
+        current_muted = self._is_volume_muted
+        # Solo toggle si el estado actual es diferente al deseado
+        if current_muted is None or current_muted != mute:
+            await self._device.mute()
 
     async def async_select_source(self, source: str) -> None:
         """Lanzar una aplicación (seleccionar fuente).
+
+        Bug 7 corregido: Valida que el source sea un package ID válido
+        antes de intentar lanzarlo.
 
         Parámetros
         ----------
         source : str
             El package ID de la app a lanzar.
         """
+        # Validar formato básico de package ID (com.xxx.yyy)
+        if not source or "." not in source:
+            _LOGGER.warning(
+                "Source '%s' no parece un package ID válido (debe contener '.')",
+                source,
+            )
+            return
+
+        # Validar contra apps conocidas o en ejecución (advertencia, no bloqueo)
+        from pyt_androidtv.constants import KNOWN_APPS
+
+        if source not in self._running_apps and source not in KNOWN_APPS:
+            _LOGGER.debug(
+                "Source '%s' no está en running_apps ni en KNOWN_APPS, "
+                "intentando lanzar de todos modos.",
+                source,
+            )
+
         await self._device.launch_app(source)

@@ -21,5 +21,18 @@
     "abort": {
       "already_configured": "Este dispositivo ya está configurado."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opciones de Android TV / Fire TV",
+        "description": "Configura las preferencias del dispositivo.\n\nApps detectadas: {installed_apps_hint}",
+        "data": {
+          "favorite_apps": "Apps favoritas (package IDs separados por coma)",
+          "scan_interval": "Intervalo de actualización (segundos)",
+          "reconnect_attempts": "Intentos de reconexión"
+        }
+      }
+    }
   }
 }

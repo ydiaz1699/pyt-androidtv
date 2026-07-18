@@ -227,7 +227,7 @@ class ADBServerConnection(ADBInterface):
         try:
             assert self._device is not None  # noqa: S101
             loop = asyncio.get_running_loop()
-            response = await loop.run_in_executor(None, self._device.shell, "screencap -p", timeout=10)
+            response = await loop.run_in_executor(None, partial(self._device.shell, "screencap -p", timeout=10))
             if isinstance(response, bytes):
                 return response
             return response.encode("latin-1") if response else None
