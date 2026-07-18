@@ -4,6 +4,8 @@
 
 Reescritura completa de [python-androidtv](https://github.com/JeffLIrion/python-androidtv) con herramientas modernas, seguridad de tipos y arquitectura extensible.
 
+**[Guía de integración con Home Assistant + Mushroom Cards](docs/HOME_ASSISTANT.md)**
+
 ## Características
 
 - **Python moderno** (3.10+) con anotaciones de tipo completas
