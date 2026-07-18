@@ -1,4 +1,4 @@
-"""ADB connection management module."""
+"""Módulo de gestión de conexiones ADB."""
 
 from .base import ADBInterface
 from .tcp import ADBConnection

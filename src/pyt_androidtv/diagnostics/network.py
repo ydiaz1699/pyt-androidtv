@@ -1,4 +1,4 @@
-"""Network diagnostics for Android TV / Fire TV devices."""
+"""Diagnósticos de red para dispositivos Android TV / Fire TV."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class WifiInfo:
-    """WiFi connection information."""
+    """Información de la conexión WiFi."""
 
     ssid: str = ""
     bssid: str = ""
@@ -26,7 +26,7 @@ class WifiInfo:
 
 @dataclass(frozen=True, slots=True)
 class NetworkInterface:
-    """A network interface on the device."""
+    """Una interfaz de red en el dispositivo."""
 
     name: str = ""
     ip_address: str = ""
@@ -36,7 +36,7 @@ class NetworkInterface:
 
 @dataclass(frozen=True, slots=True)
 class WifiScanResult:
-    """A single WiFi scan result."""
+    """Un resultado individual de escaneo WiFi."""
 
     ssid: str = ""
     bssid: str = ""
@@ -47,7 +47,7 @@ class WifiScanResult:
 
 @dataclass(frozen=True, slots=True)
 class NetworkReport:
-    """Complete network diagnostics report."""
+    """Informe completo de diagnósticos de red."""
 
     wifi: WifiInfo | None = None
     interfaces: list[NetworkInterface] = field(default_factory=list)
@@ -56,12 +56,12 @@ class NetworkReport:
 
 
 class NetworkDiagnostics:
-    """Network diagnostics for a connected device.
+    """Diagnósticos de red para un dispositivo conectado.
 
-    Parameters
+    Parámetros
     ----------
     adb : ADBInterface
-        The ADB connection to use for queries.
+        La conexión ADB a usar para consultas.
 
     """
 
@@ -69,12 +69,12 @@ class NetworkDiagnostics:
         self._adb = adb
 
     async def get_wifi_info(self) -> WifiInfo | None:
-        """Get current WiFi connection information.
+        """Obtener información de la conexión WiFi actual.
 
-        Returns
+        Retorna
         -------
-        WifiInfo or None
-            WiFi info, or None if not available.
+        WifiInfo o None
+            Información WiFi, o None si no está disponible.
 
         """
         response = await self._adb.shell("dumpsys wifi | grep 'mWifiInfo'")
@@ -90,7 +90,7 @@ class NetworkDiagnostics:
         mac_address = ""
         state = "DISCONNECTED"
 
-        # Parse mWifiInfo output
+        # Analizar la salida de mWifiInfo
         ssid_match = re.search(r'SSID: "?([^",]+)"?', response)
         if ssid_match:
             ssid = ssid_match.group(1)
@@ -134,12 +134,12 @@ class NetworkDiagnostics:
         )
 
     async def get_network_interfaces(self) -> list[NetworkInterface]:
-        """Get all network interfaces.
+        """Obtener todas las interfaces de red.
 
-        Returns
+        Retorna
         -------
         list of NetworkInterface
-            All network interfaces on the device.
+            Todas las interfaces de red en el dispositivo.
 
         """
         response = await self._adb.shell("ip addr show")
@@ -153,10 +153,10 @@ class NetworkDiagnostics:
         current_state = "DOWN"
 
         for line in response.splitlines():
-            # New interface header
+            # Encabezado de nueva interfaz
             iface_match = re.match(r"\d+: (\S+?):", line)
             if iface_match:
-                # Save previous interface
+                # Guardar la interfaz anterior
                 if current_name:
                     interfaces.append(
                         NetworkInterface(
@@ -171,17 +171,17 @@ class NetworkDiagnostics:
                 current_mac = ""
                 current_state = "UP" if "UP" in line else "DOWN"
             else:
-                # Parse inet address
+                # Analizar dirección inet
                 inet_match = re.search(r"inet (\d+\.\d+\.\d+\.\d+)", line)
                 if inet_match:
                     current_ip = inet_match.group(1)
 
-                # Parse MAC address
+                # Analizar dirección MAC
                 ether_match = re.search(r"link/ether ([0-9a-f:]+)", line, re.IGNORECASE)
                 if ether_match:
                     current_mac = ether_match.group(1)
 
-        # Don't forget the last interface
+        # No olvidar la última interfaz
         if current_name:
             interfaces.append(
                 NetworkInterface(
@@ -195,12 +195,12 @@ class NetworkDiagnostics:
         return interfaces
 
     async def get_wifi_scan_results(self) -> list[WifiScanResult]:
-        """Get WiFi scan results (nearby networks).
+        """Obtener resultados de escaneo WiFi (redes cercanas).
 
-        Returns
+        Retorna
         -------
         list of WifiScanResult
-            Nearby WiFi networks.
+            Redes WiFi cercanas.
 
         """
         response = await self._adb.shell("dumpsys wifi | grep -A 5 'Latest scan results'")
@@ -209,7 +209,7 @@ class NetworkDiagnostics:
 
         results: list[WifiScanResult] = []
         for line in response.splitlines():
-            # Parse scan result lines: SSID BSSID freq level capabilities
+            # Analizar líneas de resultados de escaneo: SSID BSSID freq level capabilities
             match = re.match(r"\s*(.+?)\s+([0-9a-f:]{17})\s+(\d+)\s+(-?\d+)\s+(.+)", line, re.IGNORECASE)
             if match:
                 results.append(
@@ -225,12 +225,12 @@ class NetworkDiagnostics:
         return results
 
     async def get_dns_servers(self) -> list[str]:
-        """Get configured DNS servers.
+        """Obtener los servidores DNS configurados.
 
-        Returns
+        Retorna
         -------
         list of str
-            The DNS server addresses.
+            Las direcciones de los servidores DNS.
 
         """
         response = await self._adb.shell("getprop net.dns1 && getprop net.dns2")
@@ -245,12 +245,12 @@ class NetworkDiagnostics:
         return servers
 
     async def get_network_report(self) -> NetworkReport:
-        """Get a complete network diagnostics report.
+        """Obtener un informe completo de diagnósticos de red.
 
-        Returns
+        Retorna
         -------
         NetworkReport
-            A comprehensive network report.
+            Un informe de red completo.
 
         """
         wifi = await self.get_wifi_info()

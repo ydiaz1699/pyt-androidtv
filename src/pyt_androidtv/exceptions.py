@@ -1,14 +1,14 @@
-"""Custom exceptions for pyt-androidtv."""
+"""Excepciones personalizadas para pyt-androidtv."""
 
 from __future__ import annotations
 
 
 class PytAndroidTVError(Exception):
-    """Base exception for all pyt-androidtv errors."""
+    """Excepción base para todos los errores de pyt-androidtv."""
 
 
 class ADBConnectionError(PytAndroidTVError):
-    """Raised when an ADB connection cannot be established or is lost."""
+    """Se lanza cuando no se puede establecer o se pierde una conexión ADB."""
 
     def __init__(self, host: str, port: int, reason: str = "") -> None:
         self.host = host
@@ -21,7 +21,7 @@ class ADBConnectionError(PytAndroidTVError):
 
 
 class DeviceNotAvailableError(PytAndroidTVError):
-    """Raised when the device is not available for communication."""
+    """Se lanza cuando el dispositivo no está disponible para comunicación."""
 
     def __init__(self, host: str, port: int) -> None:
         self.host = host
@@ -30,7 +30,7 @@ class DeviceNotAvailableError(PytAndroidTVError):
 
 
 class LockNotAcquiredError(PytAndroidTVError):
-    """Raised when the ADB lock could not be acquired within the timeout."""
+    """Se lanza cuando no se pudo adquirir el bloqueo ADB dentro del tiempo límite."""
 
     def __init__(self, timeout: float) -> None:
         self.timeout = timeout
@@ -38,7 +38,7 @@ class LockNotAcquiredError(PytAndroidTVError):
 
 
 class InvalidStateDetectionRuleError(PytAndroidTVError):
-    """Raised when a state detection rule is invalid."""
+    """Se lanza cuando una regla de detección de estado es inválida."""
 
     def __init__(self, rule: object, reason: str) -> None:
         self.rule = rule
@@ -47,7 +47,7 @@ class InvalidStateDetectionRuleError(PytAndroidTVError):
 
 
 class CommandError(PytAndroidTVError):
-    """Raised when an ADB command fails unexpectedly."""
+    """Se lanza cuando un comando ADB falla inesperadamente."""
 
     def __init__(self, command: str, output: str | None = None) -> None:
         self.command = command

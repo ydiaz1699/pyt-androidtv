@@ -1,100 +1,211 @@
 # pyt-androidtv
 
-A modern Python library to communicate with Android TV and Fire TV devices via ADB.
+> Librería moderna de Python para comunicarse con dispositivos Android TV y Fire TV mediante ADB.
 
-This is a ground-up rewrite of [python-androidtv](https://github.com/JeffLIrion/python-androidtv) using modern Python tooling and best practices.
+Reescritura completa de [python-androidtv](https://github.com/JeffLIrion/python-androidtv) con herramientas modernas, seguridad de tipos y arquitectura extensible.
 
-## Features
+## Características
 
-- **Python 3.10+** — takes advantage of modern language features
-- **Full type annotations** — PEP 561 compliant with a `py.typed` marker
-- **Async and sync interfaces** — first-class `asyncio` support with a synchronous wrapper
-- **Extensible state detection** — pluggable architecture for device state parsing
-- **Diagnostics module** — built-in tooling for troubleshooting device communication
-- **Modern tooling** — managed with `uv`, linted with `ruff`, type-checked with `ty`
+- **Python moderno** (3.10+) con anotaciones de tipo completas
+- **Soporte Sync y Async** mediante código base unificado (patrón wrapper síncrono)
+- **Detección de estado extensible** vía patrón registry (sin reglas hardcodeadas por app)
+- **Conexión inalámbrica** con descubrimiento automático y emparejamiento (inspirado en [ADBCommandCenter](https://github.com/joaomgcd/ADBCommandCenter))
+- **Control de pantalla** — toque, deslizamiento, texto (inspirado en [adb-wireless-toolkit](https://github.com/shivamprasad1001/adb-wireless-toolkit))
+- **Módulo de diagnóstico** del dispositivo (inspirado en [AndroidForensics](https://github.com/DouglasFreshHabian/AndroidForensics))
+- **Herramientas modernas**: `uv` + `ruff` + `ty` + `pytest` + GitHub Actions
+- **Android 11-14+** con enrutamiento de comandos por versión
 
-## Quick Start
+## Inicio Rápido
 
-### Installation
+### Instalación
 
 ```bash
+# Usando uv (recomendado)
+uv add pyt-androidtv
+
+# Usando pip
 pip install pyt-androidtv
+
+# Con soporte async
+pip install pyt-androidtv[async]
+
+# Con diagnósticos (salida enriquecida)
+pip install pyt-androidtv[diagnostics]
+
+# Todo incluido
+pip install pyt-androidtv[all]
 ```
 
-### Async usage
+### Uso Básico (Async)
 
 ```python
-import asyncio
-from pyt_androidtv import AndroidTVAsync
+from pyt_androidtv import AndroidTV
 
-async def main():
-    async with AndroidTVAsync("192.168.1.100") as atv:
-        state = await atv.get_state()
-        print(state)
+# Conectar al dispositivo
+async with AndroidTV("192.168.1.100") as tv:
+    # Obtener estado del dispositivo
+    estado = await tv.update()
+    print(f"Estado: {estado.state}, App: {estado.current_app}")
 
-asyncio.run(main())
+    # Controlar el dispositivo
+    await tv.home()
+    await tv.launch_app("com.netflix.ninja")
+    await tv.volume_up()
 ```
 
-### Sync usage
+### Uso Síncrono
 
 ```python
-from pyt_androidtv import AndroidTVSync
+from pyt_androidtv.sync import AndroidTVSync
 
-atv = AndroidTVSync("192.168.1.100")
-atv.connect()
-state = atv.get_state()
-print(state)
-atv.close()
+tv = AndroidTVSync("192.168.1.100")
+tv.connect()
+
+estado = tv.update()
+print(f"Estado: {estado.state}")
+
+tv.close()
 ```
 
-## Development
+### Conexión Inalámbrica
+
+```python
+from pyt_androidtv.wireless import WirelessADB
+
+# Descubrir dispositivos en la red local
+dispositivos = await WirelessADB.discover()
+
+# Conectar por WiFi (requiere emparejamiento previo)
+wireless = WirelessADB("192.168.1.100")
+await wireless.connect_tcp(port=5555)
+
+# Emparejar dispositivo nuevo (código del dispositivo)
+await wireless.pair(port=37123, code="123456")
+```
+
+### Control de Pantalla
+
+```python
+async with AndroidTV("192.168.1.100") as tv:
+    # Tocar pantalla en coordenadas (x, y)
+    await tv.tap(500, 800)
+
+    # Deslizar (swipe)
+    await tv.swipe(100, 500, 900, 500)
+
+    # Presión larga
+    await tv.long_press(500, 500, duration_ms=1500)
+
+    # Escribir texto
+    await tv.input_text("Hola Mundo")
+
+    # Captura de pantalla
+    imagen = await tv.screencap()
+```
+
+### Diagnósticos del Dispositivo
+
+```python
+from pyt_androidtv.diagnostics import DeviceDiagnostics
+
+async with DeviceDiagnostics("192.168.1.100") as diag:
+    # Reporte completo del sistema
+    reporte = await diag.full_report()
+    print(reporte.summary())
+
+    # Información de red/WiFi
+    red = await diag.network.get_wifi_info()
+
+    # Análisis de apps instaladas
+    apps = await diag.apps.get_apps_report()
+```
+
+## Desarrollo
 
 ```bash
-# Install dependencies
-uv sync
+# Clonar y configurar
+git clone https://github.com/ydiaz1699/pyt-androidtv.git
+cd pyt-androidtv
 
-# Run tests
-pytest
+# Instalar con uv
+uv sync --all-extras
 
-# Lint
-ruff check .
-ruff format --check .
+# Ejecutar tests
+uv run pytest
 
-# Type check
-ty check src/
+# Lint y formato
+uv run ruff check .
+uv run ruff format .
+
+# Verificación de tipos
+uv run ty check
 ```
 
-## Architecture
+## Arquitectura
 
 ```
 src/pyt_androidtv/
-├── __init__.py
-├── py.typed
-├── adb/              # ADB connection management
-├── androidtv/        # Android TV device interface
-├── basetv/           # Base TV abstraction layer
-├── diagnostics/      # Diagnostics and troubleshooting
-└── firetv/           # Fire TV device interface
+├── __init__.py          # API pública
+├── constants.py         # Teclas, estados, comandos (CommandRegistry)
+├── exceptions.py        # Excepciones personalizadas
+├── models.py            # Dataclasses para estado/config
+├── sync.py              # Wrapper síncrono (elimina duplicación)
+├── adb/                 # Gestión de conexiones ADB
+│   ├── base.py          # Interfaz abstracta ADB
+│   ├── tcp.py           # Conexión TCP/IP (adb-shell)
+│   └── server.py        # Conexión vía servidor ADB (adbutils)
+├── basetv/              # Funcionalidad base del TV
+│   ├── base.py          # Lógica core (parsing, control, volumen)
+│   └── state.py         # Motor de detección de estado
+├── androidtv/           # Específico de Android TV
+│   └── androidtv.py     # Clase AndroidTV
+├── firetv/              # Específico de Fire TV
+│   └── firetv.py        # Clase FireTV
+├── wireless/            # Conexión inalámbrica y descubrimiento
+│   ├── __init__.py
+│   ├── discovery.py     # Descubrimiento mDNS de dispositivos
+│   └── pairing.py       # Emparejamiento inalámbrico
+└── diagnostics/         # Diagnóstico del dispositivo
+    ├── system.py        # Info del sistema (batería, memoria, almacenamiento)
+    ├── network.py       # Diagnóstico de red (WiFi, interfaces)
+    ├── apps.py          # Análisis de apps
+    └── report.py        # Generador de reportes
 ```
 
-## Comparison with python-androidtv
+## Comparación con python-androidtv
 
-| Feature | python-androidtv | pyt-androidtv |
-|---------|-----------------|---------------|
-| Python version | 3.7+ | 3.10+ |
-| Type annotations | Partial | Full (PEP 561) |
-| Async support | Yes | Yes (first-class) |
-| Package manager | setuptools | uv |
-| Linter | flake8 + pylint | ruff |
-| Type checker | — | ty |
-| State detection | Hard-coded | Extensible |
-| Diagnostics | — | Built-in module |
+| Característica | python-androidtv | pyt-androidtv |
+|----------------|-----------------|---------------|
+| Versión Python | 2.7+ | 3.10+ |
+| Anotaciones de tipo | No | Completas (PEP 561) |
+| Async/Sync | Archivos duplicados | Código base unificado |
+| Detección de estado | Cadenas elif hardcodeadas | Basado en registry/config |
+| Conexión WiFi | Manual | Descubrimiento + emparejamiento automático |
+| Control de pantalla | No | Tap, swipe, long press, input text |
+| CI/CD | Travis CI | GitHub Actions |
+| Linting | flake8 + pylint | Ruff |
+| Type checking | Ninguno | ty |
+| Gestor de paquetes | setup.py | pyproject.toml + uv |
+| Diagnósticos | Ninguno | Módulo completo |
 
-## License
+## Herramientas Utilizadas
 
-MIT
+| Herramienta | Reemplaza | Descripción |
+|---|---|---|
+| [uv](https://docs.astral.sh/uv/) | pip/poetry/venv | Gestor de paquetes 10-100x más rápido |
+| [Ruff](https://docs.astral.sh/ruff/) | flake8 + black + isort | Linter/formatter todo-en-uno en Rust |
+| [ty](https://docs.astral.sh/ty/) | mypy/pyright | Type checker ultrarrápido de Astral |
+| [pytest](https://pytest.org) | unittest | Framework de testing moderno |
+| [adbutils](https://github.com/openatx/adbutils) | pure-python-adb | Librería ADB moderna |
+| [GitHub Actions](https://github.com/features/actions) | Travis CI | CI/CD gratuito y moderno |
 
-## Credits
+## Licencia
 
-- [JeffLIrion/python-androidtv](https://github.com/JeffLIrion/python-androidtv) — the original library this project is based on
-- [DouglasFreshHabian/AndroidForensics](https://github.com/DouglasFreshHabian/AndroidForensics) — inspiration for ADB shell interactions and forensic tooling
+Licencia MIT - Ver [LICENSE](LICENSE) para detalles.
+
+## Créditos
+
+- Proyecto original: [python-androidtv](https://github.com/JeffLIrion/python-androidtv) por Jeff Irion
+- Diagnósticos inspirados en: [AndroidForensics](https://github.com/DouglasFreshHabian/AndroidForensics) por Douglas Habian
+- Conexión inalámbrica inspirada en: [ADBCommandCenter](https://github.com/joaomgcd/ADBCommandCenter) por João Dias
+- Comandos de control inspirados en: [adb-wireless-toolkit](https://github.com/shivamprasad1001/adb-wireless-toolkit) por Shivam Prasad

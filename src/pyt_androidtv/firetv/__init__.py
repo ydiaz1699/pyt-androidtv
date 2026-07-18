@@ -1,4 +1,4 @@
-"""Fire TV module."""
+"""Módulo Fire TV."""
 
 from .firetv import FireTV
 

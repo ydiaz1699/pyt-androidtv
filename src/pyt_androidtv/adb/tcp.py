@@ -1,4 +1,4 @@
-"""ADB connection over TCP using adb-shell library."""
+"""Conexión ADB sobre TCP usando la biblioteca adb-shell."""
 
 from __future__ import annotations
 
@@ -18,20 +18,20 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ADBConnection(ADBInterface):
-    """ADB connection over TCP using the adb-shell library.
+    """Conexión ADB sobre TCP usando la biblioteca adb-shell.
 
-    Parameters
+    Parámetros
     ----------
     host : str
-        The device IP address or hostname.
+        La dirección IP o nombre de host del dispositivo.
     port : int
-        The device ADB port (default 5555).
+        El puerto ADB del dispositivo (por defecto 5555).
     adbkey : str
-        Path to the ADB private key file.
+        Ruta al archivo de clave privada ADB.
     adb_timeout_s : float
-        Timeout for ADB operations.
+        Tiempo límite para operaciones ADB.
     lock_timeout_s : float
-        Timeout for acquiring the internal lock.
+        Tiempo límite para adquirir el bloqueo interno.
 
     """
 
@@ -53,7 +53,7 @@ class ADBConnection(ADBInterface):
 
     @property
     def available(self) -> bool:
-        """Whether the ADB connection is currently active."""
+        """Si la conexión ADB está activa actualmente."""
         return self._adb_device is not None and self._adb_device.available
 
     async def connect(
@@ -63,21 +63,21 @@ class ADBConnection(ADBInterface):
         auth_timeout_s: float = DEFAULT_AUTH_TIMEOUT_S,
         transport_timeout_s: float = DEFAULT_TRANSPORT_TIMEOUT_S,
     ) -> bool:
-        """Connect to the device via TCP.
+        """Conectar al dispositivo mediante TCP.
 
-        Parameters
+        Parámetros
         ----------
         log_errors : bool
-            Whether to log connection errors.
+            Si se deben registrar los errores de conexión.
         auth_timeout_s : float
-            Timeout for authentication.
+            Tiempo límite para la autenticación.
         transport_timeout_s : float
-            Timeout for the transport layer.
+            Tiempo límite para la capa de transporte.
 
-        Returns
+        Retorna
         -------
         bool
-            True if the connection was established.
+            True si la conexión fue establecida.
 
         """
         from adb_shell.adb_device_async import AdbDeviceTcpAsync
@@ -91,7 +91,7 @@ class ADBConnection(ADBInterface):
             raise LockNotAcquiredError(self._lock_timeout_s) from err
 
         try:
-            # Close existing connection
+            # Cerrar conexión existente
             if self._adb_device is not None:
                 try:
                     await self._adb_device.close()
@@ -104,7 +104,7 @@ class ADBConnection(ADBInterface):
                 default_transport_timeout_s=transport_timeout_s,
             )
 
-            # Load or generate key
+            # Cargar o generar clave
             signer = await self._load_adbkey(self._adbkey, keygen, PythonRSASigner)
 
             await self._adb_device.connect(
@@ -130,7 +130,7 @@ class ADBConnection(ADBInterface):
             self._lock.release()
 
     async def close(self) -> None:
-        """Close the ADB connection."""
+        """Cerrar la conexión ADB."""
         if self._adb_device is not None:
             try:
                 await self._adb_device.close()
@@ -139,17 +139,17 @@ class ADBConnection(ADBInterface):
             self._adb_device = None
 
     async def shell(self, cmd: str) -> str | None:
-        """Execute an ADB shell command.
+        """Ejecutar un comando de shell ADB.
 
-        Parameters
+        Parámetros
         ----------
         cmd : str
-            The shell command to execute.
+            El comando de shell a ejecutar.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The command output, or None if execution failed.
+        str o None
+            La salida del comando, o None si la ejecución falló.
 
         """
         if not self.available:
@@ -175,14 +175,14 @@ class ADBConnection(ADBInterface):
             self._lock.release()
 
     async def pull(self, device_path: str, local_path: str) -> None:
-        """Pull a file from the device.
+        """Descargar un archivo del dispositivo.
 
-        Parameters
+        Parámetros
         ----------
         device_path : str
-            The path on the device.
+            La ruta en el dispositivo.
         local_path : str
-            The local destination path.
+            La ruta de destino local.
 
         """
         if not self.available:
@@ -205,14 +205,14 @@ class ADBConnection(ADBInterface):
             self._lock.release()
 
     async def push(self, local_path: str, device_path: str) -> None:
-        """Push a file to the device.
+        """Enviar un archivo al dispositivo.
 
-        Parameters
+        Parámetros
         ----------
         local_path : str
-            The local file path.
+            La ruta del archivo local.
         device_path : str
-            The destination path on the device.
+            La ruta de destino en el dispositivo.
 
         """
         if not self.available:
@@ -235,12 +235,12 @@ class ADBConnection(ADBInterface):
             self._lock.release()
 
     async def screencap(self) -> bytes | None:
-        """Capture a screenshot from the device.
+        """Capturar una captura de pantalla del dispositivo.
 
-        Returns
+        Retorna
         -------
-        bytes or None
-            The PNG screenshot data, or None if the capture failed.
+        bytes o None
+            Los datos de la captura de pantalla en PNG, o None si la captura falló.
 
         """
         if not self.available:
@@ -269,21 +269,21 @@ class ADBConnection(ADBInterface):
         keygen_func: object,
         signer_cls: type,
     ) -> object | None:
-        """Load or generate an ADB key for authentication.
+        """Cargar o generar una clave ADB para autenticación.
 
-        Parameters
+        Parámetros
         ----------
         adbkey_path : str
-            Path to the ADB private key file.
+            Ruta al archivo de clave privada ADB.
         keygen_func : callable
-            Function to generate a new key pair.
+            Función para generar un nuevo par de claves.
         signer_cls : type
-            The RSA signer class.
+            La clase de firmante RSA.
 
-        Returns
+        Retorna
         -------
-        object or None
-            The signer instance, or None if no key is available.
+        object o None
+            La instancia del firmante, o None si no hay clave disponible.
 
         """
         if not adbkey_path:
@@ -291,7 +291,7 @@ class ADBConnection(ADBInterface):
 
         key_path = Path(adbkey_path)
         if not key_path.exists():
-            # Generate a new key pair
+            # Generar un nuevo par de claves
             keygen_func(str(key_path))  # type: ignore[operator]
 
         with key_path.open("r") as f:

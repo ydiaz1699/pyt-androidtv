@@ -1,4 +1,4 @@
-"""Android TV device implementation."""
+"""Implementación del dispositivo Android TV."""
 
 from __future__ import annotations
 
@@ -15,14 +15,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class AndroidTV(BaseTV):
-    """Represent an Android TV device.
+    """Representa un dispositivo Android TV.
 
-    Parameters
+    Parámetros
     ----------
     config : ADBConfig
-        The ADB connection configuration.
-    state_detection_rules : dict or None
-        Custom state detection rules.
+        La configuración de conexión ADB.
+    state_detection_rules : dict o None
+        Reglas personalizadas de detección de estado.
 
     """
 
@@ -52,28 +52,28 @@ class AndroidTV(BaseTV):
         super().__init__(adb=adb, config=config, state_detection_rules=state_detection_rules)
 
     async def update(self, *, get_running_apps: bool = True, lazy: bool = True) -> DeviceState:
-        """Update the device state.
+        """Actualizar el estado del dispositivo.
 
-        Parameters
+        Parámetros
         ----------
         get_running_apps : bool
-            Whether to retrieve the running apps list.
+            Si se debe obtener la lista de apps en ejecución.
         lazy : bool
-            If True, skip some queries when the device is off.
+            Si es True, omitir algunas consultas cuando el dispositivo está apagado.
 
-        Returns
+        Retorna
         -------
         DeviceState
-            The current device state.
+            El estado actual del dispositivo.
 
         """
         if not self.available:
             return DeviceState(state=State.UNAVAILABLE)
 
-        # Get screen state, awake, and wake lock size
+        # Obtener estado de pantalla, despierto y tamaño del wake lock
         screen_on, awake, wake_lock_size = await self.screen_on_awake_wake_lock_size()
 
-        # If the screen is off, the device is off/standby
+        # Si la pantalla está apagada, el dispositivo está apagado/en espera
         if screen_on is None:
             return DeviceState(state=State.UNAVAILABLE)
 
@@ -95,25 +95,25 @@ class AndroidTV(BaseTV):
             )
             return state
 
-        # Device is on - get more information
+        # El dispositivo está encendido - obtener más información
         current_app, media_session_state = await self.current_app_media_session_state()
 
-        # Get audio state
+        # Obtener estado de audio
         audio_state_val = await self.audio_state()
 
-        # Get running apps
+        # Obtener apps en ejecución
         running_apps_list: list[str] = []
         if get_running_apps:
             apps = await self.running_apps()
             running_apps_list = apps if apps else []
 
-        # Get HDMI input
+        # Obtener entrada HDMI
         hdmi_input = await self.get_hdmi_input()
 
-        # Get volume properties
+        # Obtener propiedades de volumen
         volume_props = await self.stream_music_properties()
 
-        # Determine the state
+        # Determinar el estado
         detected_state = self._determine_state(
             current_app=current_app,
             media_session_state=media_session_state,
@@ -143,26 +143,26 @@ class AndroidTV(BaseTV):
         wake_lock_size: int | None,
         audio_state: str | None,
     ) -> State:
-        """Determine the device state using the state engine and fallbacks.
+        """Determinar el estado del dispositivo usando el motor de estado y respaldos.
 
-        Parameters
+        Parámetros
         ----------
-        current_app : str or None
-            The current foreground app.
-        media_session_state : int or None
-            The media session state.
-        wake_lock_size : int or None
-            The wake lock size.
-        audio_state : str or None
-            The audio state.
+        current_app : str o None
+            La app en primer plano actual.
+        media_session_state : int o None
+            El estado de la sesión multimedia.
+        wake_lock_size : int o None
+            El tamaño del wake lock.
+        audio_state : str o None
+            El estado de audio.
 
-        Returns
+        Retorna
         -------
         State
-            The determined state.
+            El estado determinado.
 
         """
-        # Try the state detection engine first
+        # Intentar primero con el motor de detección de estado
         state = self._state_engine.detect_state(
             current_app=current_app,
             media_session_state=media_session_state,
@@ -172,36 +172,36 @@ class AndroidTV(BaseTV):
         if state is not None:
             return state
 
-        # Fallback: use media session state
+        # Respaldo: usar el estado de sesión multimedia
         if media_session_state == 2:
             return State.PAUSED
         if media_session_state == 3:
             return State.PLAYING
 
-        # Fallback: use audio state
+        # Respaldo: usar el estado de audio
         if audio_state == "paused":
             return State.PAUSED
         if audio_state == "playing":
             return State.PLAYING
 
-        # Default to idle
+        # Por defecto: inactivo
         return State.IDLE
 
     async def turn_on(self) -> None:
-        """Turn on the Android TV device."""
+        """Encender el dispositivo Android TV."""
         await self._adb.shell(CMD_TURN_ON_ANDROIDTV)
 
     async def turn_off(self) -> None:
-        """Turn off the Android TV device."""
+        """Apagar el dispositivo Android TV."""
         await self._adb.shell(CMD_TURN_OFF_ANDROIDTV)
 
     async def get_properties_dict(self) -> dict[str, Any]:
-        """Get a dictionary of all device properties.
+        """Obtener un diccionario de todas las propiedades del dispositivo.
 
-        Returns
+        Retorna
         -------
         dict
-            A dictionary containing device info and current state.
+            Un diccionario que contiene la información del dispositivo y el estado actual.
 
         """
         device_info = await self.get_device_properties()

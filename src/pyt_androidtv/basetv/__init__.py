@@ -1,4 +1,4 @@
-"""Base TV module - shared logic for Android TV and Fire TV."""
+"""Módulo Base TV - lógica compartida para Android TV y Fire TV."""
 
 from .base import BaseTV
 from .state import StateDetectionEngine

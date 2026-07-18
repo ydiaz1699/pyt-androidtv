@@ -1,6 +1,6 @@
-"""Device diagnostics module.
+"""Módulo de diagnósticos del dispositivo.
 
-Inspired by AndroidForensics (https://github.com/DouglasFreshHabian/AndroidForensics).
+Inspirado en AndroidForensics (https://github.com/DouglasFreshHabian/AndroidForensics).
 """
 
 from .system import SystemDiagnostics

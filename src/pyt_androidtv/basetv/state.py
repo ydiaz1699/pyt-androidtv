@@ -1,4 +1,4 @@
-"""State detection engine for determining device state from properties."""
+"""Motor de detección de estado para determinar el estado del dispositivo a partir de sus propiedades."""
 
 from __future__ import annotations
 
@@ -10,10 +10,10 @@ from ..models import State
 
 _LOGGER = logging.getLogger(__name__)
 
-# Valid states for detection rules
+# Estados válidos para reglas de detección
 _VALID_STATES: frozenset[str] = frozenset(s.value for s in State if s not in (State.UNAVAILABLE,))
 
-# Valid properties that can be used in rules
+# Propiedades válidas que pueden usarse en las reglas
 _VALID_STATE_PROPERTIES: tuple[str, ...] = ("audio_state", "media_session_state")
 _VALID_PROPERTIES: tuple[str, ...] = ("audio_state", "media_session_state", "wake_lock_size")
 _VALID_PROPERTY_TYPES: dict[str, type] = {
@@ -22,7 +22,7 @@ _VALID_PROPERTY_TYPES: dict[str, type] = {
     "wake_lock_size": int,
 }
 
-# Media session state to State mapping
+# Mapeo de estado de sesión multimedia a State
 _MEDIA_SESSION_STATE_MAP: dict[int, State] = {
     2: State.PAUSED,
     3: State.PLAYING,
@@ -30,18 +30,18 @@ _MEDIA_SESSION_STATE_MAP: dict[int, State] = {
 
 
 class StateDetectionEngine:
-    """Engine for determining device state using configurable rules.
+    """Motor para determinar el estado del dispositivo usando reglas configurables.
 
-    The rules parameter is a dictionary mapping app IDs to lists of rules.
-    Each rule can be:
-        - A fixed state string (e.g., "idle", "playing")
-        - A property name ("media_session_state" or "audio_state")
-        - A conditional dict: {"state": {"property": value, ...}}
+    El parámetro rules es un diccionario que mapea IDs de aplicaciones a listas de reglas.
+    Cada regla puede ser:
+        - Una cadena de estado fijo (ej., "idle", "playing")
+        - Un nombre de propiedad ("media_session_state" o "audio_state")
+        - Un dict condicional: {"estado": {"propiedad": valor, ...}}
 
-    Parameters
+    Parámetros
     ----------
-    rules : dict or None
-        A dictionary mapping app IDs to rule lists.
+    rules : dict o None
+        Un diccionario que mapea IDs de aplicaciones a listas de reglas.
 
     """
 
@@ -53,7 +53,7 @@ class StateDetectionEngine:
 
     @property
     def rules(self) -> dict[str, list[Any]]:
-        """Return a copy of the current rules."""
+        """Retornar una copia de las reglas actuales."""
         return dict(self._rules)
 
     def detect_state(
@@ -64,23 +64,23 @@ class StateDetectionEngine:
         wake_lock_size: int | None = None,
         audio_state: str | None = None,
     ) -> State | None:
-        """Determine the device state using the configured rules.
+        """Determinar el estado del dispositivo usando las reglas configuradas.
 
-        Parameters
+        Parámetros
         ----------
-        current_app : str or None
-            The currently running application.
-        media_session_state : int or None
-            The media session playback state.
-        wake_lock_size : int or None
-            The current wake lock size.
-        audio_state : str or None
-            The audio state string ("idle", "paused", "playing").
+        current_app : str o None
+            La aplicación en ejecución actualmente.
+        media_session_state : int o None
+            El estado de reproducción de la sesión multimedia.
+        wake_lock_size : int o None
+            El tamaño actual del wake lock.
+        audio_state : str o None
+            La cadena de estado de audio ("idle", "paused", "playing").
 
-        Returns
+        Retorna
         -------
-        State or None
-            The detected state, or None if no rule matched.
+        State o None
+            El estado detectado, o None si ninguna regla coincidió.
 
         """
         if not self._rules or current_app is None or current_app not in self._rules:
@@ -89,11 +89,11 @@ class StateDetectionEngine:
         rules = self._rules[current_app]
 
         for rule in rules:
-            # Fixed state rule: always return this state for the app
+            # Regla de estado fijo: siempre retornar este estado para la app
             if isinstance(rule, str) and rule in _VALID_STATES:
                 return State(rule)
 
-            # Property-based rule: use a device property to determine state
+            # Regla basada en propiedad: usar una propiedad del dispositivo para determinar el estado
             if rule == "media_session_state":
                 if media_session_state in _MEDIA_SESSION_STATE_MAP:
                     return _MEDIA_SESSION_STATE_MAP[media_session_state]
@@ -104,7 +104,7 @@ class StateDetectionEngine:
                 if audio_state and audio_state in _VALID_STATES:
                     return State(audio_state)
 
-            # Conditional rule: check conditions and return corresponding state
+            # Regla condicional: verificar condiciones y retornar el estado correspondiente
             if isinstance(rule, dict):
                 for state_str, conditions in rule.items():
                     if state_str in _VALID_STATES and self._conditions_match(
@@ -125,23 +125,23 @@ class StateDetectionEngine:
         wake_lock_size: int | None = None,
         audio_state: str | None = None,
     ) -> bool:
-        """Check whether all conditions in the dict are satisfied.
+        """Verificar si todas las condiciones en el dict se cumplen.
 
-        Parameters
+        Parámetros
         ----------
         conditions : dict
-            A mapping of property names to expected values.
-        media_session_state : int or None
-            The media session playback state.
-        wake_lock_size : int or None
-            The current wake lock size.
-        audio_state : str or None
-            The audio state string.
+            Un mapeo de nombres de propiedades a valores esperados.
+        media_session_state : int o None
+            El estado de reproducción de la sesión multimedia.
+        wake_lock_size : int o None
+            El tamaño actual del wake lock.
+        audio_state : str o None
+            La cadena de estado de audio.
 
-        Returns
+        Retorna
         -------
         bool
-            True if all conditions are met.
+            True si todas las condiciones se cumplen.
 
         """
         for key, val in conditions.items():
@@ -160,17 +160,17 @@ class StateDetectionEngine:
 
     @classmethod
     def validate_rules(cls, rules: dict[str, list[Any]]) -> None:
-        """Validate the state detection rules.
+        """Validar las reglas de detección de estado.
 
-        Parameters
+        Parámetros
         ----------
         rules : dict
-            The rules to validate.
+            Las reglas a validar.
 
-        Raises
+        Lanza
         ------
         InvalidStateDetectionRuleError
-            If any rule is invalid.
+            Si alguna regla es inválida.
 
         """
         for app_id, app_rules in rules.items():
@@ -184,17 +184,17 @@ class StateDetectionEngine:
 
     @classmethod
     def _validate_single_rule(cls, rule: Any) -> None:
-        """Validate a single rule entry.
+        """Validar una entrada de regla individual.
 
-        Parameters
+        Parámetros
         ----------
         rule : Any
-            The rule to validate.
+            La regla a validar.
 
-        Raises
+        Lanza
         ------
         InvalidStateDetectionRuleError
-            If the rule is invalid.
+            Si la regla es inválida.
 
         """
         if isinstance(rule, str):
@@ -231,38 +231,38 @@ class StateDetectionEngine:
             raise InvalidStateDetectionRuleError(rule, "Rule must be a string or dict")
 
     def update_rules(self, rules: dict[str, list[Any]]) -> None:
-        """Update the rules (merge with existing).
+        """Actualizar las reglas (fusionar con las existentes).
 
-        Parameters
+        Parámetros
         ----------
         rules : dict
-            New rules to merge into the existing rules.
+            Nuevas reglas para fusionar con las reglas existentes.
 
         """
         self.validate_rules(rules)
         self._rules.update(rules)
 
     def set_app_rules(self, app_id: str, rules: list[Any]) -> None:
-        """Set the rules for a specific app.
+        """Establecer las reglas para una aplicación específica.
 
-        Parameters
+        Parámetros
         ----------
         app_id : str
-            The application identifier.
+            El identificador de la aplicación.
         rules : list
-            The rules for the application.
+            Las reglas para la aplicación.
 
         """
         self.validate_rules({app_id: rules})
         self._rules[app_id] = rules
 
     def remove_app_rules(self, app_id: str) -> None:
-        """Remove the rules for a specific app.
+        """Eliminar las reglas para una aplicación específica.
 
-        Parameters
+        Parámetros
         ----------
         app_id : str
-            The application identifier to remove.
+            El identificador de la aplicación a eliminar.
 
         """
         self._rules.pop(app_id, None)

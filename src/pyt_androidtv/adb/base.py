@@ -1,4 +1,4 @@
-"""Abstract base class for ADB connections."""
+"""Clase base abstracta para conexiones ADB."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ from abc import ABC, abstractmethod
 
 
 class ADBInterface(ABC):
-    """Abstract interface for ADB communication with a device."""
+    """Interfaz abstracta para la comunicación ADB con un dispositivo."""
 
     @property
     @abstractmethod
     def available(self) -> bool:
-        """Whether the ADB connection is currently active and usable."""
+        """Si la conexión ADB está activa y utilizable actualmente."""
 
     @abstractmethod
     async def connect(
@@ -21,77 +21,77 @@ class ADBInterface(ABC):
         auth_timeout_s: float = 10.0,
         transport_timeout_s: float = 1.0,
     ) -> bool:
-        """Establish a connection to the device.
+        """Establecer una conexión con el dispositivo.
 
-        Parameters
+        Parámetros
         ----------
         log_errors : bool
-            Whether to log connection errors.
+            Si se deben registrar los errores de conexión.
         auth_timeout_s : float
-            Timeout for authentication in seconds.
+            Tiempo límite para la autenticación en segundos.
         transport_timeout_s : float
-            Timeout for transport layer in seconds.
+            Tiempo límite para la capa de transporte en segundos.
 
-        Returns
+        Retorna
         -------
         bool
-            True if the connection was successful.
+            True si la conexión fue exitosa.
 
         """
 
     @abstractmethod
     async def close(self) -> None:
-        """Close the ADB connection."""
+        """Cerrar la conexión ADB."""
 
     @abstractmethod
     async def shell(self, cmd: str) -> str | None:
-        """Execute an ADB shell command.
+        """Ejecutar un comando de shell ADB.
 
-        Parameters
+        Parámetros
         ----------
         cmd : str
-            The shell command to execute.
+            El comando de shell a ejecutar.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The command output, or None if the command failed.
+        str o None
+            La salida del comando, o None si el comando falló.
 
         """
 
     @abstractmethod
     async def pull(self, device_path: str, local_path: str) -> None:
-        """Pull a file from the device.
+        """Descargar un archivo del dispositivo.
 
-        Parameters
+        Parámetros
         ----------
         device_path : str
-            The path on the device.
+            La ruta en el dispositivo.
         local_path : str
-            The local destination path.
+            La ruta de destino local.
 
         """
 
     @abstractmethod
     async def push(self, local_path: str, device_path: str) -> None:
-        """Push a file to the device.
+        """Enviar un archivo al dispositivo.
 
-        Parameters
+        Parámetros
         ----------
         local_path : str
-            The local file path.
+            La ruta del archivo local.
         device_path : str
-            The destination path on the device.
+            La ruta de destino en el dispositivo.
 
         """
 
     @abstractmethod
     async def screencap(self) -> bytes | None:
-        """Capture a screenshot from the device.
+        """Capturar una captura de pantalla del dispositivo.
 
-        Returns
+        Retorna
         -------
-        bytes or None
-            The PNG screenshot data, or None if the capture failed.
+        bytes o None
+            Los datos de la captura de pantalla en PNG, o None si la captura falló.
 
         """

@@ -1,4 +1,4 @@
-"""Base TV class with shared logic for Android TV and Fire TV."""
+"""Clase Base TV con lógica compartida para Android TV y Fire TV."""
 
 from __future__ import annotations
 
@@ -17,19 +17,19 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class BaseTV:
-    """Base class for Android TV and Fire TV devices.
+    """Clase base para dispositivos Android TV y Fire TV.
 
-    Provides shared functionality for device communication, state detection,
-    and media control via ADB.
+    Proporciona funcionalidad compartida para la comunicación con el dispositivo,
+    detección de estado y control multimedia mediante ADB.
 
-    Parameters
+    Parámetros
     ----------
     adb : ADBInterface
-        The ADB connection handler.
+        El manejador de conexión ADB.
     config : ADBConfig
-        The ADB configuration.
-    state_detection_rules : dict or None
-        Custom state detection rules.
+        La configuración ADB.
+    state_detection_rules : dict o None
+        Reglas personalizadas de detección de estado.
 
     """
 
@@ -49,34 +49,34 @@ class BaseTV:
         self._state_engine = StateDetectionEngine(state_detection_rules)
 
     # ======================================================================= #
-    #                         Context Manager                                  #
+    #                         Administrador de Contexto                        #
     # ======================================================================= #
 
     async def __aenter__(self) -> BaseTV:
-        """Enter the async context manager."""
+        """Entrar al administrador de contexto asíncrono."""
         await self.connect()
         return self
 
     async def __aexit__(self, *_exc: object) -> None:
-        """Exit the async context manager."""
+        """Salir del administrador de contexto asíncrono."""
         await self.close()
 
     # ======================================================================= #
-    #                         Connection Management                            #
+    #                         Gestión de Conexión                              #
     # ======================================================================= #
 
     @property
     def available(self) -> bool:
-        """Whether the ADB connection is active."""
+        """Si la conexión ADB está activa."""
         return self._adb.available
 
     async def connect(self) -> bool:
-        """Establish a connection to the device.
+        """Establecer una conexión con el dispositivo.
 
-        Returns
+        Retorna
         -------
         bool
-            True if the connection was successful.
+            True si la conexión fue exitosa.
 
         """
         return await self._adb.connect(
@@ -85,31 +85,31 @@ class BaseTV:
         )
 
     async def close(self) -> None:
-        """Close the ADB connection."""
+        """Cerrar la conexión ADB."""
         await self._adb.close()
 
     # ======================================================================= #
-    #                         Device Properties                                #
+    #                         Propiedades del Dispositivo                      #
     # ======================================================================= #
 
     @property
     def device_info(self) -> DeviceInfo:
-        """The current device information."""
+        """La información actual del dispositivo."""
         return self._device_info
 
     async def get_device_properties(self) -> DeviceInfo:
-        """Retrieve device properties via ADB.
+        """Obtener las propiedades del dispositivo mediante ADB.
 
-        Returns
+        Retorna
         -------
         DeviceInfo
-            The device information.
+            La información del dispositivo.
 
         """
         response = await self._adb.shell(constants.CMD_DEVICE_PROPERTIES)
         self._device_info = self._parse_device_properties(response)
 
-        # Get MAC addresses
+        # Obtener direcciones MAC
         mac_wifi_response = await self._adb.shell(constants.CMD_MAC_WLAN0)
         mac_eth_response = await self._adb.shell(constants.CMD_MAC_ETH0)
 
@@ -130,12 +130,12 @@ class BaseTV:
         return self._device_info
 
     async def get_installed_apps(self) -> list[str]:
-        """Retrieve the list of installed apps.
+        """Obtener la lista de aplicaciones instaladas.
 
-        Returns
+        Retorna
         -------
         list of str
-            The installed application package names.
+            Los nombres de paquetes de las aplicaciones instaladas.
 
         """
         response = await self._adb.shell(constants.CMD_INSTALLED_APPS)
@@ -145,16 +145,16 @@ class BaseTV:
         return self._installed_apps
 
     # ======================================================================= #
-    #                         State Queries                                    #
+    #                         Consultas de Estado                              #
     # ======================================================================= #
 
     async def screen_on(self) -> bool | None:
-        """Check if the screen is on.
+        """Verificar si la pantalla está encendida.
 
-        Returns
+        Retorna
         -------
-        bool or None
-            True if screen is on, None if indeterminate.
+        bool o None
+            True si la pantalla está encendida, None si es indeterminado.
 
         """
         response = await self._adb.shell(
@@ -165,12 +165,12 @@ class BaseTV:
         return response.strip() == "1"
 
     async def awake(self) -> bool | None:
-        """Check if the device is awake.
+        """Verificar si el dispositivo está despierto.
 
-        Returns
+        Retorna
         -------
-        bool or None
-            True if device is awake, None if indeterminate.
+        bool o None
+            True si el dispositivo está despierto, None si es indeterminado.
 
         """
         response = await self._adb.shell(
@@ -181,24 +181,24 @@ class BaseTV:
         return response.strip() == "1"
 
     async def screen_on_awake_wake_lock_size(self) -> tuple[bool | None, bool | None, int | None]:
-        """Get screen state, awake state, and wake lock size in a single call.
+        """Obtener el estado de la pantalla, estado de despertar y tamaño del wake lock en una sola llamada.
 
-        Returns
+        Retorna
         -------
         tuple
-            (screen_on, awake, wake_lock_size) tuple.
+            Tupla (screen_on, awake, wake_lock_size).
 
         """
         response = await self._adb.shell(constants.CMD_SCREEN_ON_AWAKE_WAKE_LOCK_SIZE)
         return self._parse_screen_on_awake_wake_lock_size(response)
 
     async def current_app(self) -> str | None:
-        """Get the current foreground application.
+        """Obtener la aplicación en primer plano actual.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The package name of the current app.
+        str o None
+            El nombre del paquete de la app actual.
 
         """
         cmd = CommandRegistry.current_app(self._device_info.android_version)
@@ -206,12 +206,12 @@ class BaseTV:
         return self._parse_current_app(response)
 
     async def current_app_media_session_state(self) -> tuple[str | None, int | None]:
-        """Get the current app and its media session state.
+        """Obtener la app actual y su estado de sesión multimedia.
 
-        Returns
+        Retorna
         -------
         tuple
-            (current_app, media_session_state) tuple.
+            Tupla (current_app, media_session_state).
 
         """
         cmd = CommandRegistry.current_app_media_session_state(self._device_info.android_version)
@@ -219,12 +219,12 @@ class BaseTV:
         return self._parse_current_app_media_session_state(response)
 
     async def audio_state(self) -> str | None:
-        """Get the current audio state.
+        """Obtener el estado de audio actual.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The audio state: "idle", "paused", or "playing".
+        str o None
+            El estado de audio: "idle", "paused" o "playing".
 
         """
         cmd = CommandRegistry.audio_state(self._device_info.android_version)
@@ -232,36 +232,36 @@ class BaseTV:
         return self._parse_audio_state(response)
 
     async def wake_lock_size(self) -> int | None:
-        """Get the current wake lock size.
+        """Obtener el tamaño actual del wake lock.
 
-        Returns
+        Retorna
         -------
-        int or None
-            The wake lock size.
+        int o None
+            El tamaño del wake lock.
 
         """
         response = await self._adb.shell(constants.CMD_WAKE_LOCK_SIZE)
         return self._parse_wake_lock_size(response)
 
     async def running_apps(self) -> list[str] | None:
-        """Get the list of running applications.
+        """Obtener la lista de aplicaciones en ejecución.
 
-        Returns
+        Retorna
         -------
-        list of str or None
-            The running app package names.
+        list of str o None
+            Los nombres de paquetes de las apps en ejecución.
 
         """
         response = await self._adb.shell(constants.CMD_RUNNING_APPS)
         return self._parse_running_apps(response)
 
     async def get_hdmi_input(self) -> str | None:
-        """Get the current HDMI input.
+        """Obtener la entrada HDMI actual.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The current HDMI input (e.g., "HW5").
+        str o None
+            La entrada HDMI actual (ej., "HW5").
 
         """
         cmd = CommandRegistry.hdmi_input(self._device_info.android_version)
@@ -269,16 +269,16 @@ class BaseTV:
         return self._parse_hdmi_input(response)
 
     # ======================================================================= #
-    #                         Volume Control                                   #
+    #                         Control de Volumen                               #
     # ======================================================================= #
 
     async def stream_music_properties(self) -> dict[str, Any]:
-        """Get audio stream properties.
+        """Obtener las propiedades del flujo de audio.
 
-        Returns
+        Retorna
         -------
         dict
-            Dictionary with keys: is_volume_muted, volume_level, audio_output_device.
+            Diccionario con claves: is_volume_muted, volume_level, audio_output_device.
 
         """
         response = await self._adb.shell(constants.CMD_STREAM_MUSIC)
@@ -295,16 +295,16 @@ class BaseTV:
         }
 
     async def set_volume_level(self, volume_level: float) -> None:
-        """Set the volume to a specific level (0.0 to 1.0).
+        """Establecer el volumen a un nivel específico (0.0 a 1.0).
 
-        Parameters
+        Parámetros
         ----------
         volume_level : float
-            The desired volume level between 0.0 and 1.0.
+            El nivel de volumen deseado entre 0.0 y 1.0.
 
         """
         if self._max_volume is None:
-            # Fetch max volume first
+            # Obtener primero el volumen máximo
             await self.stream_music_properties()
 
         if self._max_volume:
@@ -313,29 +313,29 @@ class BaseTV:
             await self._adb.shell(cmd)
 
     async def volume_up(self, *, current_volume: int | None = None) -> None:
-        """Increase the volume by one step."""
+        """Aumentar el volumen un paso."""
         await self.send_key_code(constants.KEYS["VOLUME_UP"])
 
     async def volume_down(self, *, current_volume: int | None = None) -> None:
-        """Decrease the volume by one step."""
+        """Disminuir el volumen un paso."""
         await self.send_key_code(constants.KEYS["VOLUME_DOWN"])
 
     # ======================================================================= #
-    #                         Key Events                                       #
+    #                         Eventos de Tecla                                 #
     # ======================================================================= #
 
     async def send_key(self, key_name: str) -> None:
-        """Send a key event by name.
+        """Enviar un evento de tecla por nombre.
 
-        Parameters
+        Parámetros
         ----------
         key_name : str
-            The key name (must be in constants.KEYS).
+            El nombre de la tecla (debe estar en constants.KEYS).
 
-        Raises
+        Lanza
         ------
         KeyError
-            If the key name is not recognized.
+            Si el nombre de la tecla no es reconocido.
 
         """
         if key_name not in constants.KEYS:
@@ -343,91 +343,91 @@ class BaseTV:
         await self.send_key_code(constants.KEYS[key_name])
 
     async def send_key_code(self, code: int) -> None:
-        """Send a key event by code.
+        """Enviar un evento de tecla por código.
 
-        Parameters
+        Parámetros
         ----------
         code : int
-            The Android key event code.
+            El código de evento de tecla de Android.
 
         """
         await self._adb.shell(f"input keyevent {code}")
 
     async def power(self) -> None:
-        """Send the POWER key event."""
+        """Enviar el evento de tecla POWER."""
         await self.send_key_code(constants.KEYS["POWER"])
 
     async def home(self) -> None:
-        """Send the HOME key event."""
+        """Enviar el evento de tecla HOME."""
         await self.send_key_code(constants.KEYS["HOME"])
 
     async def back(self) -> None:
-        """Send the BACK key event."""
+        """Enviar el evento de tecla BACK."""
         await self.send_key_code(constants.KEYS["BACK"])
 
     async def menu(self) -> None:
-        """Send the MENU key event."""
+        """Enviar el evento de tecla MENU."""
         await self.send_key_code(constants.KEYS["MENU"])
 
     async def enter(self) -> None:
-        """Send the ENTER key event."""
+        """Enviar el evento de tecla ENTER."""
         await self.send_key_code(constants.KEYS["ENTER"])
 
     async def up(self) -> None:
-        """Send the UP key event."""
+        """Enviar el evento de tecla UP."""
         await self.send_key_code(constants.KEYS["UP"])
 
     async def down(self) -> None:
-        """Send the DOWN key event."""
+        """Enviar el evento de tecla DOWN."""
         await self.send_key_code(constants.KEYS["DOWN"])
 
     async def left(self) -> None:
-        """Send the LEFT key event."""
+        """Enviar el evento de tecla LEFT."""
         await self.send_key_code(constants.KEYS["LEFT"])
 
     async def right(self) -> None:
-        """Send the RIGHT key event."""
+        """Enviar el evento de tecla RIGHT."""
         await self.send_key_code(constants.KEYS["RIGHT"])
 
     async def media_play(self) -> None:
-        """Send the PLAY key event."""
+        """Enviar el evento de tecla PLAY."""
         await self.send_key_code(constants.KEYS["PLAY"])
 
     async def media_pause(self) -> None:
-        """Send the PAUSE key event."""
+        """Enviar el evento de tecla PAUSE."""
         await self.send_key_code(constants.KEYS["PAUSE"])
 
     async def media_play_pause(self) -> None:
-        """Send the PLAY_PAUSE key event."""
+        """Enviar el evento de tecla PLAY_PAUSE."""
         await self.send_key_code(constants.KEYS["PLAY_PAUSE"])
 
     async def media_stop(self) -> None:
-        """Send the STOP key event."""
+        """Enviar el evento de tecla STOP."""
         await self.send_key_code(constants.KEYS["STOP"])
 
     async def media_next(self) -> None:
-        """Send the NEXT key event."""
+        """Enviar el evento de tecla NEXT."""
         await self.send_key_code(constants.KEYS["NEXT"])
 
     async def media_previous(self) -> None:
-        """Send the PREVIOUS key event."""
+        """Enviar el evento de tecla PREVIOUS."""
         await self.send_key_code(constants.KEYS["PREVIOUS"])
 
     async def mute(self) -> None:
-        """Send the MUTE key event."""
+        """Enviar el evento de tecla MUTE."""
         await self.send_key_code(constants.KEYS["MUTE"])
 
     # ======================================================================= #
-    #                         App Management                                   #
+    #                         Gestión de Aplicaciones                          #
     # ======================================================================= #
 
     async def launch_app(self, app: str) -> None:
-        """Launch an application.
+        """Lanzar una aplicación.
 
-        Parameters
+        Parámetros
         ----------
         app : str
-            The package name of the app to launch.
+            El nombre del paquete de la app a lanzar.
 
         """
         cmd = CommandRegistry.launch_app(
@@ -438,60 +438,220 @@ class BaseTV:
         await self._adb.shell(cmd)
 
     async def stop_app(self, app: str) -> None:
-        """Force stop an application.
+        """Forzar la detención de una aplicación.
 
-        Parameters
+        Parámetros
         ----------
         app : str
-            The package name of the app to stop.
+            El nombre del paquete de la app a detener.
 
         """
         await self._adb.shell(f"am force-stop {app}")
 
     async def start_intent(self, intent: str) -> None:
-        """Start an activity with the given intent.
+        """Iniciar una actividad con el intent dado.
 
-        Parameters
+        Parámetros
         ----------
         intent : str
-            The intent URI or component to start.
+            El URI del intent o componente a iniciar.
 
         """
         await self._adb.shell(f"am start {intent}")
 
     # ======================================================================= #
-    #                         Power Control                                    #
+    #                      Control de Pantalla (Touch)                         #
+    # ======================================================================= #
+
+    async def tap(self, x: int, y: int) -> None:
+        """Simular un toque en la pantalla en las coordenadas dadas.
+
+        Equivalente a: adb shell input tap <x> <y>
+
+        Parámetros
+        ----------
+        x : int
+            Coordenada horizontal (píxeles desde la izquierda).
+        y : int
+            Coordenada vertical (píxeles desde arriba).
+        """
+        await self._adb.shell(f"input tap {x} {y}")
+
+    async def swipe(
+        self, x1: int, y1: int, x2: int, y2: int, duration_ms: int = 300
+    ) -> None:
+        """Simular un deslizamiento (swipe) en la pantalla.
+
+        Equivalente a: adb shell input swipe <x1> <y1> <x2> <y2> <duración>
+
+        Parámetros
+        ----------
+        x1 : int
+            Coordenada X del punto de inicio.
+        y1 : int
+            Coordenada Y del punto de inicio.
+        x2 : int
+            Coordenada X del punto final.
+        y2 : int
+            Coordenada Y del punto final.
+        duration_ms : int
+            Duración del deslizamiento en milisegundos (por defecto 300ms).
+        """
+        await self._adb.shell(f"input swipe {x1} {y1} {x2} {y2} {duration_ms}")
+
+    async def long_press(self, x: int, y: int, duration_ms: int = 1500) -> None:
+        """Simular una presión larga en la pantalla.
+
+        Se implementa como un swipe sin movimiento con duración extendida.
+        Equivalente a: adb shell input swipe <x> <y> <x> <y> <duración>
+
+        Parámetros
+        ----------
+        x : int
+            Coordenada X del punto de presión.
+        y : int
+            Coordenada Y del punto de presión.
+        duration_ms : int
+            Duración de la presión en milisegundos (por defecto 1500ms).
+        """
+        await self._adb.shell(f"input swipe {x} {y} {x} {y} {duration_ms}")
+
+    async def input_text(self, text: str) -> None:
+        """Escribir texto en el campo de entrada activo.
+
+        Los espacios se reemplazan por '%s' ya que 'input text' no acepta
+        espacios directamente.
+        Equivalente a: adb shell input text '<texto>'
+
+        Parámetros
+        ----------
+        text : str
+            El texto a escribir. Los espacios serán convertidos automáticamente.
+        """
+        # Escapar caracteres especiales de shell y reemplazar espacios
+        escaped = text.replace(" ", "%s").replace("'", "\\'").replace("\"", "\\\"")
+        await self._adb.shell(f"input text '{escaped}'")
+
+    async def input_keyevent(self, keycode: int) -> None:
+        """Enviar un evento de tecla por código numérico directamente.
+
+        Útil para teclas que no están en el diccionario KEYS, como
+        DELETE (67), TAB (61), CAPS_LOCK (115), etc.
+
+        Parámetros
+        ----------
+        keycode : int
+            Código de tecla Android (ver KeyEvent en documentación Android).
+        """
+        await self._adb.shell(f"input keyevent {keycode}")
+
+    async def swipe_up(self, duration_ms: int = 300) -> None:
+        """Deslizar hacia arriba (scroll down en contenido).
+
+        Útil para navegar listas y menús.
+        """
+        await self.swipe(500, 1500, 500, 500, duration_ms)
+
+    async def swipe_down(self, duration_ms: int = 300) -> None:
+        """Deslizar hacia abajo (scroll up en contenido).
+
+        Útil para navegar listas y menús.
+        """
+        await self.swipe(500, 500, 500, 1500, duration_ms)
+
+    async def swipe_left(self, duration_ms: int = 300) -> None:
+        """Deslizar hacia la izquierda.
+
+        Útil para navegar carruseles horizontales.
+        """
+        await self.swipe(900, 500, 100, 500, duration_ms)
+
+    async def swipe_right(self, duration_ms: int = 300) -> None:
+        """Deslizar hacia la derecha.
+
+        Útil para navegar carruseles horizontales.
+        """
+        await self.swipe(100, 500, 900, 500, duration_ms)
+
+    async def screen_record(self, device_path: str = "/sdcard/record.mp4", duration_s: int = 10) -> None:
+        """Iniciar grabación de pantalla.
+
+        La grabación se guarda en el dispositivo. Usar adb pull para descargarla.
+        Equivalente a: adb shell screenrecord <ruta> --time-limit <duración>
+
+        Parámetros
+        ----------
+        device_path : str
+            Ruta en el dispositivo donde se guardará el video.
+        duration_s : int
+            Duración máxima de la grabación en segundos (máximo 180).
+        """
+        max_duration = min(duration_s, 180)
+        await self._adb.shell(f"screenrecord {device_path} --time-limit {max_duration}")
+
+    async def get_screen_resolution(self) -> tuple[int, int] | None:
+        """Obtener la resolución de pantalla del dispositivo.
+
+        Retorna
+        -------
+        tuple[int, int] o None
+            Tupla (ancho, alto) en píxeles, o None si no se pudo determinar.
+        """
+        response = await self._adb.shell("wm size")
+        if response:
+            match = re.search(r"(\d+)x(\d+)", response)
+            if match:
+                return int(match.group(1)), int(match.group(2))
+        return None
+
+    async def get_screen_density(self) -> int | None:
+        """Obtener la densidad de pantalla (DPI) del dispositivo.
+
+        Retorna
+        -------
+        int o None
+            Densidad en DPI, o None si no se pudo determinar.
+        """
+        response = await self._adb.shell("wm density")
+        if response:
+            match = re.search(r"(\d+)", response)
+            if match:
+                return int(match.group(1))
+        return None
+
+    # ======================================================================= #
+    #                         Control de Energía                               #
     # ======================================================================= #
 
     async def turn_on(self) -> None:
-        """Turn on the device."""
+        """Encender el dispositivo."""
         await self._adb.shell(constants.CMD_TURN_ON_ANDROIDTV)
 
     async def turn_off(self) -> None:
-        """Turn off the device."""
+        """Apagar el dispositivo."""
         await self._adb.shell(constants.CMD_TURN_OFF_ANDROIDTV)
 
     async def sleep(self) -> None:
-        """Put the device to sleep."""
+        """Poner el dispositivo en suspensión."""
         await self.send_key_code(constants.KEYS["SLEEP"])
 
     # ======================================================================= #
-    #                         Static Parsing Methods                           #
+    #                         Métodos Estáticos de Análisis                    #
     # ======================================================================= #
 
     @staticmethod
     def _parse_device_properties(response: str | None) -> DeviceInfo:
-        """Parse device properties from the ADB response.
+        """Analizar las propiedades del dispositivo desde la respuesta ADB.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The output of CMD_DEVICE_PROPERTIES.
+        response : str o None
+            La salida de CMD_DEVICE_PROPERTIES.
 
-        Returns
+        Retorna
         -------
         DeviceInfo
-            Parsed device information.
+            Información del dispositivo analizada.
 
         """
         if not response:
@@ -512,17 +672,17 @@ class BaseTV:
 
     @staticmethod
     def _parse_mac_address(response: str | None) -> str | None:
-        """Parse a MAC address from ADB response.
+        """Analizar una dirección MAC desde la respuesta ADB.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The response from a MAC address command.
+        response : str o None
+            La respuesta de un comando de dirección MAC.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The parsed MAC address.
+        str o None
+            La dirección MAC analizada.
 
         """
         if not response:
@@ -532,17 +692,17 @@ class BaseTV:
 
     @staticmethod
     def _parse_installed_apps(response: str | None) -> list[str] | None:
-        """Parse the installed apps from the ADB response.
+        """Analizar las aplicaciones instaladas desde la respuesta ADB.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The output of CMD_INSTALLED_APPS.
+        response : str o None
+            La salida de CMD_INSTALLED_APPS.
 
-        Returns
+        Retorna
         -------
-        list of str or None
-            The list of installed app package names.
+        list of str o None
+            La lista de nombres de paquetes de las aplicaciones instaladas.
 
         """
         if response is None:
@@ -557,14 +717,14 @@ class BaseTV:
     def _parse_screen_on_awake_wake_lock_size(
         output: str | None,
     ) -> tuple[bool | None, bool | None, int | None]:
-        """Parse screen on, awake, and wake lock size from combined output.
+        """Analizar pantalla encendida, despierto y tamaño del wake lock desde la salida combinada.
 
-        Parameters
+        Parámetros
         ----------
-        output : str or None
-            The output from CMD_SCREEN_ON_AWAKE_WAKE_LOCK_SIZE.
+        output : str o None
+            La salida de CMD_SCREEN_ON_AWAKE_WAKE_LOCK_SIZE.
 
-        Returns
+        Retorna
         -------
         tuple
             (screen_on, awake, wake_lock_size).
@@ -584,17 +744,17 @@ class BaseTV:
 
     @staticmethod
     def _parse_current_app(response: str | None) -> str | None:
-        """Parse the current app from the ADB response.
+        """Analizar la app actual desde la respuesta ADB.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The output of the current app command.
+        response : str o None
+            La salida del comando de la app actual.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The current app package name.
+        str o None
+            El nombre del paquete de la app actual.
 
         """
         if not response or "=" in response or "{" in response:
@@ -605,14 +765,14 @@ class BaseTV:
     def _parse_current_app_media_session_state(
         response: str | None,
     ) -> tuple[str | None, int | None]:
-        """Parse current app and media session state from combined output.
+        """Analizar la app actual y el estado de sesión multimedia desde la salida combinada.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The combined output.
+        response : str o None
+            La salida combinada.
 
-        Returns
+        Retorna
         -------
         tuple
             (current_app, media_session_state).
@@ -633,17 +793,17 @@ class BaseTV:
 
     @staticmethod
     def _parse_audio_state(response: str | None) -> str | None:
-        """Parse the audio state from the ADB response.
+        """Analizar el estado de audio desde la respuesta ADB.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The output of the audio state command.
+        response : str o None
+            La salida del comando de estado de audio.
 
-        Returns
+        Retorna
         -------
-        str or None
-            "idle", "paused", or "playing".
+        str o None
+            "idle", "paused" o "playing".
 
         """
         if not response:
@@ -656,17 +816,17 @@ class BaseTV:
 
     @staticmethod
     def _parse_wake_lock_size(response: str | None) -> int | None:
-        """Parse the wake lock size from the ADB response.
+        """Analizar el tamaño del wake lock desde la respuesta ADB.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The output of CMD_WAKE_LOCK_SIZE.
+        response : str o None
+            La salida de CMD_WAKE_LOCK_SIZE.
 
-        Returns
+        Retorna
         -------
-        int or None
-            The wake lock size.
+        int o None
+            El tamaño del wake lock.
 
         """
         if not response:
@@ -676,17 +836,17 @@ class BaseTV:
 
     @staticmethod
     def _parse_running_apps(response: str | None) -> list[str] | None:
-        """Parse the running apps from the ADB response.
+        """Analizar las apps en ejecución desde la respuesta ADB.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The output of CMD_RUNNING_APPS.
+        response : str o None
+            La salida de CMD_RUNNING_APPS.
 
-        Returns
+        Retorna
         -------
-        list of str or None
-            The list of running app package names.
+        list of str o None
+            La lista de nombres de paquetes de las apps en ejecución.
 
         """
         if not response:
@@ -699,34 +859,34 @@ class BaseTV:
 
     @staticmethod
     def _parse_hdmi_input(response: str | None) -> str | None:
-        """Parse the HDMI input from the ADB response.
+        """Analizar la entrada HDMI desde la respuesta ADB.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The output of the HDMI input command.
+        response : str o None
+            La salida del comando de entrada HDMI.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The HDMI input identifier (e.g., "HW5").
+        str o None
+            El identificador de la entrada HDMI (ej., "HW5").
 
         """
         return response.strip() if response and response.strip() else None
 
     @staticmethod
     def _parse_stream_music(response: str | None) -> str | None:
-        """Parse the STREAM_MUSIC block from dumpsys audio output.
+        """Analizar el bloque STREAM_MUSIC desde la salida de dumpsys audio.
 
-        Parameters
+        Parámetros
         ----------
-        response : str or None
-            The raw output of CMD_STREAM_MUSIC.
+        response : str o None
+            La salida sin procesar de CMD_STREAM_MUSIC.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The parsed STREAM_MUSIC block.
+        str o None
+            El bloque STREAM_MUSIC analizado.
 
         """
         if not response:
@@ -736,17 +896,17 @@ class BaseTV:
 
     @staticmethod
     def _parse_audio_output_device(stream_music: str | None) -> str | None:
-        """Parse the audio output device from STREAM_MUSIC.
+        """Analizar el dispositivo de salida de audio desde STREAM_MUSIC.
 
-        Parameters
+        Parámetros
         ----------
-        stream_music : str or None
-            The STREAM_MUSIC block.
+        stream_music : str o None
+            El bloque STREAM_MUSIC.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The audio output device name.
+        str o None
+            El nombre del dispositivo de salida de audio.
 
         """
         if not stream_music:
@@ -756,17 +916,17 @@ class BaseTV:
 
     @staticmethod
     def _parse_is_volume_muted(stream_music: str | None) -> bool | None:
-        """Parse whether volume is muted from STREAM_MUSIC.
+        """Analizar si el volumen está silenciado desde STREAM_MUSIC.
 
-        Parameters
+        Parámetros
         ----------
-        stream_music : str or None
-            The STREAM_MUSIC block.
+        stream_music : str o None
+            El bloque STREAM_MUSIC.
 
-        Returns
+        Retorna
         -------
-        bool or None
-            Whether volume is muted.
+        bool o None
+            Si el volumen está silenciado.
 
         """
         if not stream_music:
@@ -775,25 +935,25 @@ class BaseTV:
         return match.group(1) == "true" if match else None
 
     def _parse_volume(self, stream_music: str | None, audio_output_device: str | None) -> int | None:
-        """Parse the volume from STREAM_MUSIC.
+        """Analizar el volumen desde STREAM_MUSIC.
 
-        Parameters
+        Parámetros
         ----------
-        stream_music : str or None
-            The STREAM_MUSIC block.
-        audio_output_device : str or None
-            The current audio output device.
+        stream_music : str o None
+            El bloque STREAM_MUSIC.
+        audio_output_device : str o None
+            El dispositivo de salida de audio actual.
 
-        Returns
+        Retorna
         -------
-        int or None
-            The absolute volume level.
+        int o None
+            El nivel de volumen absoluto.
 
         """
         if not stream_music:
             return None
 
-        # Get max volume
+        # Obtener volumen máximo
         if self._max_volume is None:
             max_match = constants.REGEX_MAX_VOLUME.search(stream_music)
             if max_match:
@@ -807,17 +967,17 @@ class BaseTV:
         return int(match.group(1)) if match else None
 
     def _volume_level(self, volume: int | None) -> float | None:
-        """Convert absolute volume to a 0.0-1.0 level.
+        """Convertir volumen absoluto a un nivel de 0.0-1.0.
 
-        Parameters
+        Parámetros
         ----------
-        volume : int or None
-            The absolute volume.
+        volume : int o None
+            El volumen absoluto.
 
-        Returns
+        Retorna
         -------
-        float or None
-            The relative volume level.
+        float o None
+            El nivel de volumen relativo.
 
         """
         if volume is not None and self._max_volume:

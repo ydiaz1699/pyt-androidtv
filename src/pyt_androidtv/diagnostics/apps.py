@@ -1,4 +1,4 @@
-"""Application diagnostics for Android TV / Fire TV devices."""
+"""Diagnósticos de aplicaciones para dispositivos Android TV / Fire TV."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class AppInfo:
-    """Information about an installed application."""
+    """Información sobre una aplicación instalada."""
 
     package_name: str = ""
     version_name: str = ""
@@ -24,7 +24,7 @@ class AppInfo:
 
 @dataclass(frozen=True, slots=True)
 class RunningProcess:
-    """Information about a running process."""
+    """Información sobre un proceso en ejecución."""
 
     pid: int = 0
     user: str = ""
@@ -36,7 +36,7 @@ class RunningProcess:
 
 @dataclass(frozen=True, slots=True)
 class AppsReport:
-    """Complete applications diagnostics report."""
+    """Informe completo de diagnósticos de aplicaciones."""
 
     all_packages: list[str] = field(default_factory=list)
     third_party_packages: list[str] = field(default_factory=list)
@@ -45,12 +45,12 @@ class AppsReport:
 
 
 class AppDiagnostics:
-    """Application diagnostics for a connected device.
+    """Diagnósticos de aplicaciones para un dispositivo conectado.
 
-    Parameters
+    Parámetros
     ----------
     adb : ADBInterface
-        The ADB connection to use for queries.
+        La conexión ADB a usar para consultas.
 
     """
 
@@ -58,12 +58,12 @@ class AppDiagnostics:
         self._adb = adb
 
     async def get_all_packages(self) -> list[str]:
-        """Get all installed packages.
+        """Obtener todos los paquetes instalados.
 
-        Returns
+        Retorna
         -------
         list of str
-            All package names.
+            Todos los nombres de paquetes.
 
         """
         response = await self._adb.shell("pm list packages")
@@ -77,12 +77,12 @@ class AppDiagnostics:
         ]
 
     async def get_third_party_packages(self) -> list[str]:
-        """Get third-party (user-installed) packages.
+        """Obtener paquetes de terceros (instalados por el usuario).
 
-        Returns
+        Retorna
         -------
         list of str
-            Third-party package names.
+            Nombres de paquetes de terceros.
 
         """
         response = await self._adb.shell("pm list packages -3")
@@ -96,12 +96,12 @@ class AppDiagnostics:
         ]
 
     async def get_running_processes(self) -> list[RunningProcess]:
-        """Get all running processes.
+        """Obtener todos los procesos en ejecución.
 
-        Returns
+        Retorna
         -------
         list of RunningProcess
-            Running processes with details.
+            Procesos en ejecución con detalles.
 
         """
         response = await self._adb.shell("ps -A -o PID,USER,VSZ,RSS,S,NAME")
@@ -109,7 +109,7 @@ class AppDiagnostics:
             return []
 
         processes: list[RunningProcess] = []
-        for line in response.splitlines()[1:]:  # Skip header
+        for line in response.splitlines()[1:]:  # Omitir encabezado
             parts = line.split(None, 5)
             if len(parts) >= 6:
                 try:
@@ -140,17 +140,17 @@ class AppDiagnostics:
         return processes
 
     async def get_top_memory_apps(self, limit: int = 10) -> list[tuple[str, int]]:
-        """Get the top memory-consuming apps.
+        """Obtener las aplicaciones que más memoria consumen.
 
-        Parameters
+        Parámetros
         ----------
         limit : int
-            Maximum number of apps to return.
+            Número máximo de aplicaciones a retornar.
 
-        Returns
+        Retorna
         -------
         list of tuple[str, int]
-            Tuples of (package_name, memory_kb) sorted by memory usage descending.
+            Tuplas de (nombre_paquete, memoria_kb) ordenadas por uso de memoria descendente.
 
         """
         response = await self._adb.shell("dumpsys meminfo --sort-by-uss | head -50")
@@ -159,7 +159,7 @@ class AppDiagnostics:
 
         apps: list[tuple[str, int]] = []
         for line in response.splitlines():
-            # Match lines like: "123,456K: com.example.app (pid 1234)"
+            # Coincidir líneas como: "123,456K: com.example.app (pid 1234)"
             match = re.match(r"\s*([\d,]+)K:\s+(\S+)", line)
             if match:
                 try:
@@ -169,17 +169,17 @@ class AppDiagnostics:
                 except ValueError:
                     pass
 
-        # Sort by memory descending and limit
+        # Ordenar por memoria descendente y limitar
         apps.sort(key=lambda x: x[1], reverse=True)
         return apps[:limit]
 
     async def get_apps_report(self) -> AppsReport:
-        """Get a complete applications diagnostics report.
+        """Obtener un informe completo de diagnósticos de aplicaciones.
 
-        Returns
+        Retorna
         -------
         AppsReport
-            A comprehensive report of installed and running applications.
+            Un informe completo de aplicaciones instaladas y en ejecución.
 
         """
         all_packages = await self.get_all_packages()

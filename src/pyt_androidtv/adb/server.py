@@ -1,4 +1,4 @@
-"""ADB connection via an ADB server using adbutils."""
+"""Conexión ADB mediante un servidor ADB usando adbutils."""
 
 from __future__ import annotations
 
@@ -18,18 +18,18 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ADBServerConnection(ADBInterface):
-    """ADB connection that delegates commands to an ADB server.
+    """Conexión ADB que delega comandos a un servidor ADB.
 
-    Parameters
+    Parámetros
     ----------
     host : str
-        The device serial/address (e.g., "192.168.1.100:5555").
+        El serial/dirección del dispositivo (ej., "192.168.1.100:5555").
     adb_server_ip : str
-        The IP address of the ADB server.
+        La dirección IP del servidor ADB.
     adb_server_port : int
-        The port of the ADB server (default 5037).
+        El puerto del servidor ADB (por defecto 5037).
     lock_timeout_s : float
-        Timeout for acquiring the internal lock.
+        Tiempo límite para adquirir el bloqueo interno.
 
     """
 
@@ -52,7 +52,7 @@ class ADBServerConnection(ADBInterface):
 
     @property
     def available(self) -> bool:
-        """Whether the ADB connection is currently active."""
+        """Si la conexión ADB está activa actualmente."""
         return self._device is not None
 
     async def connect(
@@ -62,21 +62,21 @@ class ADBServerConnection(ADBInterface):
         auth_timeout_s: float = 10.0,
         transport_timeout_s: float = 1.0,
     ) -> bool:
-        """Connect to the device via the ADB server.
+        """Conectar al dispositivo mediante el servidor ADB.
 
-        Parameters
+        Parámetros
         ----------
         log_errors : bool
-            Whether to log connection errors.
+            Si se deben registrar los errores de conexión.
         auth_timeout_s : float
-            Unused for server connections (handled by the server).
+            No utilizado para conexiones de servidor (manejado por el servidor).
         transport_timeout_s : float
-            Unused for server connections (handled by the server).
+            No utilizado para conexiones de servidor (manejado por el servidor).
 
-        Returns
+        Retorna
         -------
         bool
-            True if the connection was established.
+            True si la conexión fue establecida.
 
         """
         from adbutils import AdbClient
@@ -91,9 +91,9 @@ class ADBServerConnection(ADBInterface):
             loop = asyncio.get_running_loop()
             client = AdbClient(host=self._adb_server_ip, port=self._adb_server_port)
 
-            # Connect to the device through the ADB server
+            # Conectar al dispositivo a través del servidor ADB
             device = await loop.run_in_executor(None, partial(client.device, serial=self._serial))
-            # Verify the device is reachable
+            # Verificar que el dispositivo es alcanzable
             await loop.run_in_executor(None, device.get_state)
             self._device = device
             _LOGGER.debug("Connected to %s via ADB server at %s:%d", self._serial, self._adb_server_ip, self._adb_server_port)
@@ -112,21 +112,21 @@ class ADBServerConnection(ADBInterface):
             self._lock.release()
 
     async def close(self) -> None:
-        """Close the ADB connection."""
+        """Cerrar la conexión ADB."""
         self._device = None
 
     async def shell(self, cmd: str) -> str | None:
-        """Execute an ADB shell command via the ADB server.
+        """Ejecutar un comando de shell ADB mediante el servidor ADB.
 
-        Parameters
+        Parámetros
         ----------
         cmd : str
-            The shell command to execute.
+            El comando de shell a ejecutar.
 
-        Returns
+        Retorna
         -------
-        str or None
-            The command output, or None if execution failed.
+        str o None
+            La salida del comando, o None si la ejecución falló.
 
         """
         if not self.available:
@@ -153,14 +153,14 @@ class ADBServerConnection(ADBInterface):
             self._lock.release()
 
     async def pull(self, device_path: str, local_path: str) -> None:
-        """Pull a file from the device via the ADB server.
+        """Descargar un archivo del dispositivo mediante el servidor ADB.
 
-        Parameters
+        Parámetros
         ----------
         device_path : str
-            The path on the device.
+            La ruta en el dispositivo.
         local_path : str
-            The local destination path.
+            La ruta de destino local.
 
         """
         if not self.available:
@@ -180,14 +180,14 @@ class ADBServerConnection(ADBInterface):
             self._lock.release()
 
     async def push(self, local_path: str, device_path: str) -> None:
-        """Push a file to the device via the ADB server.
+        """Enviar un archivo al dispositivo mediante el servidor ADB.
 
-        Parameters
+        Parámetros
         ----------
         local_path : str
-            The local file path.
+            La ruta del archivo local.
         device_path : str
-            The destination path on the device.
+            La ruta de destino en el dispositivo.
 
         """
         if not self.available:
@@ -207,12 +207,12 @@ class ADBServerConnection(ADBInterface):
             self._lock.release()
 
     async def screencap(self) -> bytes | None:
-        """Capture a screenshot from the device via the ADB server.
+        """Capturar una captura de pantalla del dispositivo mediante el servidor ADB.
 
-        Returns
+        Retorna
         -------
-        bytes or None
-            The PNG screenshot data, or None if the capture failed.
+        bytes o None
+            Los datos de la captura de pantalla en PNG, o None si la captura falló.
 
         """
         if not self.available:

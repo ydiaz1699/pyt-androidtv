@@ -1,4 +1,4 @@
-"""Data models for pyt-androidtv using dataclasses."""
+"""Modelos de datos para pyt-androidtv usando dataclasses."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from enum import IntEnum, StrEnum
 
 
 class DeviceType(IntEnum):
-    """Device type enumeration."""
+    """Enumeración de tipo de dispositivo."""
 
     UNKNOWN = 0
     ANDROID_TV = 1
@@ -15,7 +15,7 @@ class DeviceType(IntEnum):
 
 
 class State(StrEnum):
-    """Device state enumeration."""
+    """Enumeración de estado del dispositivo."""
 
     IDLE = "idle"
     OFF = "off"
@@ -27,7 +27,7 @@ class State(StrEnum):
 
 
 class AudioState(StrEnum):
-    """Audio playback state."""
+    """Estado de reproducción de audio."""
 
     IDLE = "idle"
     PLAYING = "playing"
@@ -36,7 +36,7 @@ class AudioState(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class DeviceInfo:
-    """Immutable device information."""
+    """Información inmutable del dispositivo."""
 
     manufacturer: str = ""
     model: str = ""
@@ -48,7 +48,7 @@ class DeviceInfo:
 
     @property
     def android_version(self) -> int | None:
-        """Parse the Android version as an integer, or None if not determinable."""
+        """Analiza la versión de Android como un entero, o None si no es determinable."""
         try:
             return int(self.sw_version.split(".")[0])
         except (ValueError, IndexError):
@@ -56,14 +56,14 @@ class DeviceInfo:
 
     @property
     def is_android_11_plus(self) -> bool:
-        """Whether this device runs Android 11 or higher."""
+        """Si este dispositivo ejecuta Android 11 o superior."""
         ver = self.android_version
         return ver is not None and ver >= 11
 
 
 @dataclass(slots=True)
 class DeviceState:
-    """Current state of the device."""
+    """Estado actual del dispositivo."""
 
     state: State = State.UNAVAILABLE
     current_app: str | None = None
@@ -79,13 +79,13 @@ class DeviceState:
 
     @property
     def is_on(self) -> bool:
-        """Whether the device is on (not off/standby/unavailable)."""
+        """Si el dispositivo está encendido (no apagado/en espera/no disponible)."""
         return self.state not in (State.OFF, State.STANDBY, State.UNAVAILABLE)
 
 
 @dataclass(frozen=True, slots=True)
 class ADBConfig:
-    """Configuration for ADB connection."""
+    """Configuración para la conexión ADB."""
 
     host: str
     port: int = 5555
@@ -99,7 +99,7 @@ class ADBConfig:
 
 @dataclass(frozen=True, slots=True)
 class StateDetectionRule:
-    """A single rule for state detection."""
+    """Una regla individual para la detección de estado."""
 
     state: State | None = None
     use_property: str | None = None

@@ -1,4 +1,4 @@
-"""Android TV module."""
+"""Módulo Android TV."""
 
 from .androidtv import AndroidTV
 

@@ -1,4 +1,4 @@
-"""Fire TV device implementation."""
+"""Implementación del dispositivo Fire TV."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from ..models import ADBConfig, DeviceState, DeviceType, State
 
 _LOGGER = logging.getLogger(__name__)
 
-# Fire TV specific default state detection rules
+# Reglas de detección de estado por defecto específicas de Fire TV
 _FIRETV_DEFAULT_RULES: dict[str, list[Any]] = {
     "com.amazon.tv.launcher": ["idle"],
     "com.amazon.firebat": ["media_session_state"],
@@ -30,14 +30,14 @@ _FIRETV_DEFAULT_RULES: dict[str, list[Any]] = {
 
 
 class FireTV(BaseTV):
-    """Represent a Fire TV device.
+    """Representa un dispositivo Fire TV.
 
-    Parameters
+    Parámetros
     ----------
     config : ADBConfig
-        The ADB connection configuration.
-    state_detection_rules : dict or None
-        Custom state detection rules. If None, Fire TV defaults are used.
+        La configuración de conexión ADB.
+    state_detection_rules : dict o None
+        Reglas personalizadas de detección de estado. Si es None, se usan las predeterminadas de Fire TV.
 
     """
 
@@ -64,34 +64,34 @@ class FireTV(BaseTV):
                 lock_timeout_s=config.lock_timeout_s,
             )
 
-        # Use Fire TV default rules if no custom rules provided
+        # Usar reglas predeterminadas de Fire TV si no se proporcionan reglas personalizadas
         rules = state_detection_rules if state_detection_rules is not None else _FIRETV_DEFAULT_RULES
 
         super().__init__(adb=adb, config=config, state_detection_rules=rules)
 
     async def update(self, *, get_running_apps: bool = True, lazy: bool = True) -> DeviceState:
-        """Update the device state.
+        """Actualizar el estado del dispositivo.
 
-        Parameters
+        Parámetros
         ----------
         get_running_apps : bool
-            Whether to retrieve the running apps list.
+            Si se debe obtener la lista de apps en ejecución.
         lazy : bool
-            If True, skip some queries when the device is off.
+            Si es True, omitir algunas consultas cuando el dispositivo está apagado.
 
-        Returns
+        Retorna
         -------
         DeviceState
-            The current device state.
+            El estado actual del dispositivo.
 
         """
         if not self.available:
             return DeviceState(state=State.UNAVAILABLE)
 
-        # Get screen state, awake, and wake lock size
+        # Obtener estado de pantalla, despierto y tamaño del wake lock
         screen_on, awake, wake_lock_size = await self.screen_on_awake_wake_lock_size()
 
-        # If the screen is off, the device is off/standby
+        # Si la pantalla está apagada, el dispositivo está apagado/en espera
         if screen_on is None:
             return DeviceState(state=State.UNAVAILABLE)
 
@@ -111,25 +111,25 @@ class FireTV(BaseTV):
                 wake_lock_size=wake_lock_size,
             )
 
-        # Device is on - get more information
+        # El dispositivo está encendido - obtener más información
         current_app, media_session_state = await self.current_app_media_session_state()
 
-        # Get audio state
+        # Obtener estado de audio
         audio_state_val = await self.audio_state()
 
-        # Get running apps
+        # Obtener apps en ejecución
         running_apps_list: list[str] = []
         if get_running_apps:
             apps = await self.running_apps()
             running_apps_list = apps if apps else []
 
-        # Get HDMI input
+        # Obtener entrada HDMI
         hdmi_input = await self.get_hdmi_input()
 
-        # Get volume properties
+        # Obtener propiedades de volumen
         volume_props = await self.stream_music_properties()
 
-        # Determine the state
+        # Determinar el estado
         detected_state = self._determine_state(
             current_app=current_app,
             media_session_state=media_session_state,
@@ -159,26 +159,26 @@ class FireTV(BaseTV):
         wake_lock_size: int | None,
         audio_state: str | None,
     ) -> State:
-        """Determine the device state using the state engine and Fire TV fallbacks.
+        """Determinar el estado del dispositivo usando el motor de estado y respaldos de Fire TV.
 
-        Parameters
+        Parámetros
         ----------
-        current_app : str or None
-            The current foreground app.
-        media_session_state : int or None
-            The media session state.
-        wake_lock_size : int or None
-            The wake lock size.
-        audio_state : str or None
-            The audio state.
+        current_app : str o None
+            La app en primer plano actual.
+        media_session_state : int o None
+            El estado de la sesión multimedia.
+        wake_lock_size : int o None
+            El tamaño del wake lock.
+        audio_state : str o None
+            El estado de audio.
 
-        Returns
+        Retorna
         -------
         State
-            The determined state.
+            El estado determinado.
 
         """
-        # Try the state detection engine first
+        # Intentar primero con el motor de detección de estado
         state = self._state_engine.detect_state(
             current_app=current_app,
             media_session_state=media_session_state,
@@ -188,46 +188,46 @@ class FireTV(BaseTV):
         if state is not None:
             return state
 
-        # Fire TV fallback: use media session state
+        # Respaldo de Fire TV: usar el estado de sesión multimedia
         if media_session_state == 2:
             return State.PAUSED
         if media_session_state == 3:
             return State.PLAYING
 
-        # Fire TV fallback: use wake lock size heuristic
-        # Fire TV typically has wake_lock_size >= 2 when playing
+        # Respaldo de Fire TV: usar heurística del tamaño del wake lock
+        # Fire TV típicamente tiene wake_lock_size >= 2 cuando está reproduciendo
         if wake_lock_size is not None:
             if wake_lock_size >= 3:
                 return State.PLAYING
             if wake_lock_size == 2:
                 return State.PAUSED
 
-        # Fallback: use audio state
+        # Respaldo: usar el estado de audio
         if audio_state == "paused":
             return State.PAUSED
         if audio_state == "playing":
             return State.PLAYING
 
-        # Default to idle
+        # Por defecto: inactivo
         return State.IDLE
 
     async def turn_on(self) -> None:
-        """Turn on the Fire TV device."""
+        """Encender el dispositivo Fire TV."""
         await self._adb.shell(CMD_TURN_ON_FIRETV)
 
     async def turn_off(self) -> None:
-        """Turn off the Fire TV device."""
+        """Apagar el dispositivo Fire TV."""
         await self._adb.shell(CMD_TURN_OFF_FIRETV)
 
     async def launch_app(self, app: str) -> None:
-        """Launch an application on Fire TV.
+        """Lanzar una aplicación en Fire TV.
 
-        Uses LAUNCHER intent instead of LEANBACK_LAUNCHER.
+        Usa el intent LAUNCHER en lugar de LEANBACK_LAUNCHER.
 
-        Parameters
+        Parámetros
         ----------
         app : str
-            The package name of the app to launch.
+            El nombre del paquete de la app a lanzar.
 
         """
         cmd = CommandRegistry.launch_app(
@@ -238,12 +238,12 @@ class FireTV(BaseTV):
         await self._adb.shell(cmd)
 
     async def get_properties_dict(self) -> dict[str, Any]:
-        """Get a dictionary of all device properties.
+        """Obtener un diccionario de todas las propiedades del dispositivo.
 
-        Returns
+        Retorna
         -------
         dict
-            A dictionary containing device info and current state.
+            Un diccionario que contiene la información del dispositivo y el estado actual.
 
         """
         device_info = await self.get_device_properties()

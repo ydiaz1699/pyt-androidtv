@@ -1,4 +1,4 @@
-"""pyt-androidtv: Modern Python library for Android TV / Fire TV control via ADB."""
+"""pyt-androidtv: Biblioteca moderna de Python para el control de Android TV / Fire TV mediante ADB."""
 
 from __future__ import annotations
 

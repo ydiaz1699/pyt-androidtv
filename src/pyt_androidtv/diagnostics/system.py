@@ -1,4 +1,4 @@
-"""System diagnostics for Android TV / Fire TV devices."""
+"""Diagnósticos del sistema para dispositivos Android TV / Fire TV."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class BatteryInfo:
-    """Battery information (for battery-powered devices)."""
+    """Información de la batería (para dispositivos con batería)."""
 
     level: int = 0
     status: str = "unknown"
@@ -25,7 +25,7 @@ class BatteryInfo:
 
 @dataclass(frozen=True, slots=True)
 class MemoryInfo:
-    """Memory usage information."""
+    """Información de uso de memoria."""
 
     total_kb: int = 0
     free_kb: int = 0
@@ -35,12 +35,12 @@ class MemoryInfo:
 
     @property
     def used_kb(self) -> int:
-        """Calculate used memory in KB."""
+        """Calcular la memoria usada en KB."""
         return self.total_kb - self.available_kb
 
     @property
     def usage_percent(self) -> float:
-        """Calculate memory usage as a percentage."""
+        """Calcular el uso de memoria como porcentaje."""
         if self.total_kb == 0:
             return 0.0
         return (self.used_kb / self.total_kb) * 100.0
@@ -48,7 +48,7 @@ class MemoryInfo:
 
 @dataclass(frozen=True, slots=True)
 class StorageInfo:
-    """Storage usage information."""
+    """Información de uso de almacenamiento."""
 
     filesystem: str = ""
     total_blocks: int = 0
@@ -58,7 +58,7 @@ class StorageInfo:
 
     @property
     def usage_percent(self) -> float:
-        """Calculate storage usage as a percentage."""
+        """Calcular el uso de almacenamiento como porcentaje."""
         if self.total_blocks == 0:
             return 0.0
         return (self.used_blocks / self.total_blocks) * 100.0
@@ -66,7 +66,7 @@ class StorageInfo:
 
 @dataclass(frozen=True, slots=True)
 class SystemSnapshot:
-    """A snapshot of the system state."""
+    """Una instantánea del estado del sistema."""
 
     battery: BatteryInfo | None = None
     memory: MemoryInfo | None = None
@@ -77,12 +77,12 @@ class SystemSnapshot:
 
 
 class SystemDiagnostics:
-    """System diagnostics for a connected device.
+    """Diagnósticos del sistema para un dispositivo conectado.
 
-    Parameters
+    Parámetros
     ----------
     adb : ADBInterface
-        The ADB connection to use for queries.
+        La conexión ADB a usar para consultas.
 
     """
 
@@ -90,12 +90,12 @@ class SystemDiagnostics:
         self._adb = adb
 
     async def get_battery_info(self) -> BatteryInfo | None:
-        """Get battery information from the device.
+        """Obtener información de la batería del dispositivo.
 
-        Returns
+        Retorna
         -------
-        BatteryInfo or None
-            The battery info, or None if it could not be retrieved.
+        BatteryInfo o None
+            La información de la batería, o None si no se pudo obtener.
 
         """
         response = await self._adb.shell("dumpsys battery")
@@ -153,12 +153,12 @@ class SystemDiagnostics:
         )
 
     async def get_memory_info(self) -> MemoryInfo | None:
-        """Get memory usage information.
+        """Obtener información de uso de memoria.
 
-        Returns
+        Retorna
         -------
-        MemoryInfo or None
-            The memory info, or None if it could not be retrieved.
+        MemoryInfo o None
+            La información de memoria, o None si no se pudo obtener.
 
         """
         response = await self._adb.shell("cat /proc/meminfo")
@@ -184,12 +184,12 @@ class SystemDiagnostics:
         )
 
     async def get_storage_info(self) -> list[StorageInfo]:
-        """Get storage usage information.
+        """Obtener información de uso de almacenamiento.
 
-        Returns
+        Retorna
         -------
         list of StorageInfo
-            Storage info for each mounted filesystem.
+            Información de almacenamiento para cada sistema de archivos montado.
 
         """
         response = await self._adb.shell("df")
@@ -197,7 +197,7 @@ class SystemDiagnostics:
             return []
 
         storage_list: list[StorageInfo] = []
-        for line in response.splitlines()[1:]:  # Skip header
+        for line in response.splitlines()[1:]:  # Omitir encabezado
             parts = line.split()
             if len(parts) >= 6:
                 try:
@@ -216,24 +216,24 @@ class SystemDiagnostics:
         return storage_list
 
     async def get_uptime(self) -> str:
-        """Get the device uptime.
+        """Obtener el tiempo de actividad del dispositivo.
 
-        Returns
+        Retorna
         -------
         str
-            The uptime string.
+            La cadena de tiempo de actividad.
 
         """
         response = await self._adb.shell("uptime")
         return response.strip() if response else ""
 
     async def get_boot_count(self) -> int | None:
-        """Get the device boot count.
+        """Obtener el conteo de arranques del dispositivo.
 
-        Returns
+        Retorna
         -------
-        int or None
-            The number of times the device has booted.
+        int o None
+            El número de veces que el dispositivo ha arrancado.
 
         """
         response = await self._adb.shell("settings get global boot_count")
@@ -242,12 +242,12 @@ class SystemDiagnostics:
         return None
 
     async def get_active_services(self) -> list[str]:
-        """Get a list of active/running services.
+        """Obtener una lista de servicios activos/en ejecución.
 
-        Returns
+        Retorna
         -------
         list of str
-            Active service names.
+            Nombres de servicios activos.
 
         """
         response = await self._adb.shell("dumpsys activity services | grep 'ServiceRecord'")
@@ -256,19 +256,19 @@ class SystemDiagnostics:
 
         services: list[str] = []
         for line in response.splitlines():
-            # Extract service name from ServiceRecord line
+            # Extraer nombre del servicio de la línea ServiceRecord
             match = re.search(r"ServiceRecord\{[a-f0-9]+ [a-z0-9]+ (.+?)\}", line)
             if match:
                 services.append(match.group(1))
         return services
 
     async def get_system_snapshot(self) -> SystemSnapshot:
-        """Get a complete system snapshot.
+        """Obtener una instantánea completa del sistema.
 
-        Returns
+        Retorna
         -------
         SystemSnapshot
-            A comprehensive snapshot of the system state.
+            Una instantánea completa del estado del sistema.
 
         """
         battery = await self.get_battery_info()

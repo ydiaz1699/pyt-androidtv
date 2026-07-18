@@ -1,4 +1,4 @@
-"""Diagnostic report generation for Android TV / Fire TV devices."""
+"""Generación de informes de diagnóstico para dispositivos Android TV / Fire TV."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 @dataclass(slots=True)
 class DiagnosticReport:
-    """A complete diagnostic report for a device."""
+    """Un informe de diagnóstico completo para un dispositivo."""
 
     timestamp: str = ""
     system: SystemSnapshot | None = None
@@ -24,12 +24,12 @@ class DiagnosticReport:
     apps: AppsReport | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert the report to a dictionary.
+        """Convertir el informe a un diccionario.
 
-        Returns
+        Retorna
         -------
         dict
-            The report as a nested dictionary.
+            El informe como un diccionario anidado.
 
         """
         result: dict[str, Any] = {"timestamp": self.timestamp}
@@ -99,12 +99,12 @@ class DiagnosticReport:
         return result
 
     def summary(self) -> str:
-        """Generate a human-readable summary of the report.
+        """Generar un resumen legible del informe.
 
-        Returns
+        Retorna
         -------
         str
-            A summary string.
+            Una cadena de resumen.
 
         """
         lines: list[str] = [f"Diagnostic Report - {self.timestamp}", "=" * 50]
@@ -146,15 +146,15 @@ class DiagnosticReport:
 
 
 class DeviceDiagnostics:
-    """Complete device diagnostics coordinator.
+    """Coordinador completo de diagnósticos del dispositivo.
 
-    Provides access to system, network, and app diagnostics subsystems,
-    and can generate comprehensive reports.
+    Proporciona acceso a los subsistemas de diagnósticos de sistema, red y aplicaciones,
+    y puede generar informes completos.
 
-    Parameters
+    Parámetros
     ----------
     adb : ADBInterface
-        The ADB connection to use for queries.
+        La conexión ADB a usar para consultas.
 
     """
 
@@ -165,21 +165,21 @@ class DeviceDiagnostics:
         self.apps = AppDiagnostics(adb)
 
     async def __aenter__(self) -> DeviceDiagnostics:
-        """Enter the async context manager."""
+        """Entrar al administrador de contexto asíncrono."""
         return self
 
     async def __aexit__(self, *_exc: object) -> None:
-        """Exit the async context manager."""
-        # No cleanup needed for diagnostics
+        """Salir del administrador de contexto asíncrono."""
+        # No se necesita limpieza para diagnósticos
         pass
 
     async def full_report(self) -> DiagnosticReport:
-        """Generate a full diagnostic report.
+        """Generar un informe de diagnóstico completo.
 
-        Returns
+        Retorna
         -------
         DiagnosticReport
-            A comprehensive report including system, network, and app data.
+            Un informe completo que incluye datos de sistema, red y aplicaciones.
 
         """
         timestamp = datetime.now(tz=timezone.utc).isoformat()
@@ -196,17 +196,17 @@ class DeviceDiagnostics:
         )
 
     async def quick_check(self) -> DiagnosticReport:
-        """Generate a quick diagnostic check (minimal data).
+        """Generar una verificación de diagnóstico rápida (datos mínimos).
 
-        Returns
+        Retorna
         -------
         DiagnosticReport
-            A lightweight report with basic system and network info.
+            Un informe ligero con información básica de sistema y red.
 
         """
         timestamp = datetime.now(tz=timezone.utc).isoformat()
 
-        # Only get basic info for a quick check
+        # Solo obtener información básica para una verificación rápida
         memory = await self.system.get_memory_info()
         uptime = await self.system.get_uptime()
         wifi = await self.network.get_wifi_info()
