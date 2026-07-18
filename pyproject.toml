@@ -1,0 +1,123 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyt-androidtv"
+version = "1.0.0"
+description = "Modern Python library to communicate with Android TV and Fire TV devices via ADB"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "ydiaz1699" },
+]
+keywords = ["adb", "android", "androidtv", "firetv", "smart-tv", "automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Home Automation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "adb-shell>=0.4.0",
+    "adbutils>=2.0.0",
+]
+
+[project.optional-dependencies]
+async = ["aiofiles>=24.0.0"]
+usb = ["adb-shell[usb]>=0.4.0"]
+diagnostics = ["rich>=13.0.0"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.8.0",
+]
+all = ["pyt-androidtv[async,usb,diagnostics,dev]"]
+
+[project.urls]
+Homepage = "https://github.com/ydiaz1699/pyt-androidtv"
+Repository = "https://github.com/ydiaz1699/pyt-androidtv"
+Issues = "https://github.com/ydiaz1699/pyt-androidtv/issues"
+
+# ============================================================================
+# Ruff - Linter & Formatter (replaces flake8 + black + isort + pylint)
+# ============================================================================
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez
+    "T20",    # flake8-print
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "RUF",    # ruff-specific rules
+    "ANN",    # flake8-annotations
+    "ASYNC",  # flake8-async
+    "LOG",    # flake8-logging
+]
+ignore = [
+    "ANN101",  # missing type annotation for self
+    "ANN102",  # missing type annotation for cls
+    "ANN401",  # dynamically typed expressions (Any)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pyt_androidtv"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+# ============================================================================
+# Pytest
+# ============================================================================
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+# ============================================================================
+# Coverage
+# ============================================================================
+[tool.coverage.run]
+source = ["src/pyt_androidtv"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.",
+]
+
+# ============================================================================
+# ty - Type Checker (Astral's alternative to mypy)
+# ============================================================================
+[tool.ty]
+python-version = "3.10"
