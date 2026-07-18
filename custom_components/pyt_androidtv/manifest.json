@@ -1,0 +1,13 @@
+{
+  "domain": "pyt_androidtv",
+  "name": "Android TV / Fire TV (pyt-androidtv)",
+  "codeowners": ["@ydiaz1699"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/ydiaz1699/pyt-androidtv",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "requirements": ["pyt-androidtv>=1.0.0"],
+  "version": "1.0.0",
+  "quality_scale": "silver"
+}

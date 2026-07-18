@@ -1,0 +1,131 @@
+# Servicios personalizados de pyt_androidtv para Home Assistant
+# Estos servicios se pueden llamar desde automatizaciones, scripts y tarjetas Mushroom
+
+adb_command:
+  name: Comando ADB
+  description: Ejecutar un comando ADB shell personalizado en el dispositivo.
+  fields:
+    entity_id:
+      name: Entidad
+      description: La entidad media_player del dispositivo Android TV/Fire TV.
+      required: true
+      selector:
+        entity:
+          domain: media_player
+          integration: pyt_androidtv
+    command:
+      name: Comando
+      description: El comando ADB shell a ejecutar.
+      required: true
+      example: "dumpsys battery"
+      selector:
+        text:
+
+tap:
+  name: Toque en Pantalla
+  description: Simular un toque en coordenadas específicas de la pantalla.
+  fields:
+    entity_id:
+      name: Entidad
+      description: La entidad media_player del dispositivo.
+      required: true
+      selector:
+        entity:
+          domain: media_player
+          integration: pyt_androidtv
+    x:
+      name: Coordenada X
+      description: Posición horizontal en píxeles.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3840
+          mode: box
+    y:
+      name: Coordenada Y
+      description: Posición vertical en píxeles.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 2160
+          mode: box
+
+swipe:
+  name: Deslizamiento en Pantalla
+  description: Simular un deslizamiento (swipe) en la pantalla.
+  fields:
+    entity_id:
+      name: Entidad
+      description: La entidad media_player del dispositivo.
+      required: true
+      selector:
+        entity:
+          domain: media_player
+          integration: pyt_androidtv
+    x1:
+      name: X Inicio
+      description: Coordenada X del punto de inicio.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3840
+          mode: box
+    y1:
+      name: Y Inicio
+      description: Coordenada Y del punto de inicio.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 2160
+          mode: box
+    x2:
+      name: X Final
+      description: Coordenada X del punto final.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3840
+          mode: box
+    y2:
+      name: Y Final
+      description: Coordenada Y del punto final.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 2160
+          mode: box
+    duration_ms:
+      name: Duración (ms)
+      description: Duración del deslizamiento en milisegundos.
+      default: 300
+      selector:
+        number:
+          min: 100
+          max: 5000
+          mode: slider
+
+input_text:
+  name: Escribir Texto
+  description: Escribir texto en el campo de entrada activo del dispositivo.
+  fields:
+    entity_id:
+      name: Entidad
+      description: La entidad media_player del dispositivo.
+      required: true
+      selector:
+        entity:
+          domain: media_player
+          integration: pyt_androidtv
+    text:
+      name: Texto
+      description: El texto a escribir en el dispositivo.
+      required: true
+      example: "Hola Mundo"
+      selector:
+        text:
